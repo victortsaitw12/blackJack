@@ -34,20 +34,73 @@ class DBA{
       throw err;
     });
   }
+  onBLJ2DBA_REQ_CONFIG(protocol){
+    // set the default response.
+    let packet = SDK.protocol.makeEmptyProtocol(
+      'DBA2BLJ_RSP_CONFIG'
+    );
+    packet.update({
+      to_topic: protocol.from_topic,
+      seq_back:protocol.seq,
+      config: {}
+    });
+    SDK.mongo.findOne({
+      db: 'test', collection: 'BLJConfig',
+      query: {
+        area: protocol.area 
+      }
+    }).then(data => {
+      packet.update({config: data});
+      SDK.send2XYZ(packet);
+    }).catch(err => {
+      console.log(err);  
+    });
+  }
   onBLJ2DBA_REQ_JOIN_TABLE(protocol){
+    // set the default response.
     let packet = SDK.protocol.makeEmptyProtocol('DBA2BLJ_RSP_JOIN_TABLE')
     packet.update({
       to_topic: protocol.from_topic,
       seq_back: protocol.seq,
-      area: 'coin_100',
+      area: protocol.area,
       table_id: protocol.table_id,
-      user_id: 10001,
-      money_in_pocket: 1000,
-      money_in_table: 1000,
-      nickname: 'victor tsai',
-      result: 'SUCCESS'
+      user_id: protocol.user_id,
+      money_in_pocket: -1,
+      money_in_table: -1,
+      nickname: '',
+      result: 'False'
     });
-    return SDK.send2XYZ(packet);
+    // query MemberDB
+    SDK.mongo.findOne({
+      db: 'test',
+      collection: 'MemberDB',
+      query: {
+        user_id: protocol.user_id
+      }
+    }).then(data => {
+      // query moneyInTable
+      return SDK.mongo.findOne({
+        db: 'test',
+        collection: 'BLJMoneyInTable'
+        query: {
+          area: protocol.area,
+          table_id: protocol.table_id,
+          user_id: protocol.user_id,
+        }
+      }).then(inData => {
+        return packet.update({
+          money_in_table: inData.money,
+          money_in_pocket: data.money_in_pocket,
+          nickname: data.nickname,
+          result: 'SUCCESS'
+        })
+      });
+    }).then(packet => {
+      return SDK.send2XYZ(packet);
+    }).catch((err) => {
+      console.log(err);
+      return SDK.send2XYZ(packet);
+    });
   }
   onGCT2DBA_REQ_LOGIN(protocol){
     let packet = SDK.protocol.makeEmptyProtocol('DBA2GCT_RSP_LOGIN');

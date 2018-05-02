@@ -86,6 +86,7 @@ module.exports = {
     seq_back: Joi.number().integer().required(),
     sit: Joi.array().items(Joi.object()).required(),
     stand: Joi.array().items(Joi.object()).required(),
+    result: Joi.string().required(),
     from_topic: Joi.string()
   }).unknown(),
   GCT2BLJ_REQ_BUY_IN: Joi.object().keys({
@@ -149,15 +150,16 @@ module.exports = {
     area: Joi.string().required(),
     table_id: Joi.number().integer().required(),
     user_id: Joi.number().integer().required(),
-    bets: Joi.array().items(Joi.object()).required(),
-    pair_bets: Joi.array().items(Joi.object()).required(),
+    bets: Joi.object().required(),
+    pair_bets: Joi.object().required(),
     from_topic: Joi.string(),
   }).unknown(),
   BLJ2GCT_RSP_BET: Joi.object().keys({
     proto: Joi.string().required(),
     seq_back: Joi.number().integer().required(),
     bets: Joi.array().items(Joi.object()).required(),
-    pair_bets: Joi.array().items(Joi.object()).required(),
+    pair_bets: Joi.object().required(),
+    result: Joi.string().required(),
     from_topic: Joi.string()
   }).unknown(),
   GCT2BLJ_NTF_BET: Joi.object().keys({
@@ -205,6 +207,7 @@ module.exports = {
     seat_id: Joi.number().integer().required(),
     hand_id: Joi.number().integer().required(),
     option: Joi.string().required(),
+    result: Joi.string().required(),
     from_topic: Joi.string(),
   }).unknown(),
   BLJ2GCT_NTF_OTHER_PLAY: Joi.object().keys({

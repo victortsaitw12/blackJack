@@ -1,5 +1,6 @@
 'use strict'
 const R = require('ramda');
+const SDK = require("victsaitw-sdk");
 class Table{
   constructor(config){
     this.players = {};
@@ -85,6 +86,16 @@ class Table{
   }
   onSTATE_NTF_SHOWDOWN(proto){
     return;
+  }
+  onSTATE_NTF_JOIN_TABLE(proto){
+    let player = new Player({
+      user_id: proto.rsp.user_id,
+      money_in_pocket: proto.rsp.money_in_pocket,
+      money_in_table: proto.rsp.money_in_table,
+      nickname: proto.rsp.nickname
+    });
+    this.players[player.user_id] = player;
+    return player.toObject();
   }
 }
 

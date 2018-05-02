@@ -1,9 +1,11 @@
 'use strict'
 const SDK = require("victsaitw-sdk");
 const StateMachine = require('./state');
-// const Protocol = require('./table/protocol');
 const Schemas = require('./table/schemas');
 const R = require('ramda');
+const di = require('../di');
+const asClass = require('awilix').asClass;
+const asValue = require('awilix').asValue;
 class BLJ{
   constructor(){
     this.state = null;
@@ -11,7 +13,7 @@ class BLJ{
   }
   start(){
     SDK.on('stateChange', (state) => {
-      this.state = 'ready';
+      this.triggerWhenReady();
     });
     SDK.on('kafkaMessage', (data) => {
       return this.protocolHandler(data);
@@ -45,13 +47,20 @@ class BLJ{
     packet.toTopic = 'dbaPool';
     return SDK.send2XYZ(packet);
   }
-  onGCT2BLJ_REQ_LOGIN(protocol){
-    let packet = SDK.protocol.makeEmptyProtocol('BLJ2GCT_RSP_LOGIN');
-    packet.update({
-      'seq_back': protocol.seq,
+  triggerWhenReady(){
+    let req = SDK.protocol.makeEmptyProtocol(
+      'BLJ2DBA_REQ_CONFIG'
+    );
+    req.update({ seq: SDK.sequence });
+    req.timeout = 10;
+    this.send2DBA(packet).then(data => {
+      container.register({
+        serverConfig: asValue(data.rsp.config),
+      });
+      this.state = 'ready';
+    }).catch(err => {
+      console.log(err);  
     });
-    packet.toTopic = protocol.from_topic;
-    SDK.send2XYZ(packet);
   }
   findTablesWithSeats(tables){
     return R.compose(
@@ -109,28 +118,57 @@ class BLJ{
     ])({new_table_id, available})
   }
   onGCT2BLJ_REQ_JOIN_TABLE(protocol){
+    if (!R.equeals('ready', this.state){
+      throw new Error('Server is not ready.');
+    }
+    // set the default response.
+    let response = SDK.protocol.makeEmptyProtocol(
+      'BLJ2GCT_RSP_JOIN_TABLE'
+    );
+    response.update({
+      to_topic: protocol.fromTopic,
+      seq_back: data.req.seq,
+      player: {},
+      result: 'FALSE'
+    });
+    // find or creat an available table.
     const available = this.findTableOrCreateNewOne();
     this.tables[available.table_id] = available.join_table;
+    // prepare the request protocol.
     let packet = SDK.protocol.makeEmptyProtocol('BLJ2DBA_REQ_JOIN_TABLE');
     packet.update({
-      seq: 12345,
+      seq: SDK.sequence,
       area: protocol.area,
       table_id: available.table_id,
       user_id: protocol.user_id,
     });
     packet.timeout = 10;
-    this.send2DBA(packet).then((data) => {
-      console.log(data);
-      let ret = SDK.protocol.makeEmptyProtocol('BLJ2GCT_RSP_JOIN_TABLE');
-      ret.update({
-        seq_back: protocol.seq,
-        area: protocol.area,
-        table_id: available.table_id,
-        user_id: protocol.user_id,
-        to_topic: protocol.fromTopic,
-      });
-      SDK.send2XYZ(ret);
-    }).catch(err => console.log(err));
+    this.send2DBA(
+      packet
+    ).then(R.cond([
+      [(data) => {
+        return R.equeals('SUCCESS', data.rsp.result);  
+      },
+      (data) => {
+        let player_obj = available.join_table.onData(Object.assign({
+          proto: 'STATE_NTF_JOIN_TABLE',
+        }, data);
+        response.update({
+          player: player,
+          result: DBA.rsp.result,
+        });
+        return SDK.send2XYZ(response);
+      }],
+      [R.T, (data) => {
+        response.update({
+          result: DBA.rsp.result,
+        });
+        return SDK.send2XYZ(response);
+      }]
+    ])).catch(err => {
+      console.log(err);  
+      return SDK.send2XYZ(response);
+    });
   } 
 };
 module.exports = new BLJ();
