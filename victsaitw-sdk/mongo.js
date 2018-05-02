@@ -36,6 +36,7 @@ class Database extends EventEmitter{
       collection: Joi.string().required(),
       query: Joi.object(),
     });
+    return Joi.validate(data, schema);
   }
   findOne(data){
     return this.validateFindOne(data).then((inData) => {

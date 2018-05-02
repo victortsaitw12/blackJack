@@ -109,4 +109,9 @@ describe('BLJ:GCT2BLJ_REQ_JOIN_TABLE', () => {
       user_id: 11763600,
     });
   });
+  it('uniq', () => {
+    var id = new Date().valueOf() + '' + process.pid;
+    console.log(id);
+    console.log(process.pid);
+  });
 });

@@ -49,5 +49,29 @@ class DBA{
     });
     return SDK.send2XYZ(packet);
   }
+  onGCT2DBA_REQ_LOGIN(protocol){
+    let packet = SDK.protocol.makeEmptyProtocol('DBA2GCT_RSP_LOGIN');
+    let nickname = '';
+    let money = 0;
+    SDK.mongo.findOne({
+      db: 'test',
+      collection: 'MemberDB',
+      query: {
+        _id: protocol.user_id,
+      }
+    }).then((data) => {
+      console.log(data);
+      packet.update({
+        to_topic: protocol.from_topic,
+        seq_back: protocol.seq,
+        money: data.money,
+        nickname: data.nickname,
+        user_id: protocol.user_id
+      });
+    return SDK.send2XYZ(packet);
+    }).catch((err) => {
+      console.log(err);  
+    });
+  }
 };
 module.exports = new DBA();

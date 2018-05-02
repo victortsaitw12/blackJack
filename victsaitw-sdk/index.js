@@ -15,6 +15,9 @@ class SDK extends EventEmitter{
     this.kafka.on('stateChange', this.stateChange.bind(this));
     this.kafka.on('kafkaMessage', this.kafkaMessage.bind(this));
   }
+  sequence(){
+    return new Date().valueOf() + '' + process.pid;
+  }
   start({schemas, mongo_url, kafka_url}){
     schemas = schemas ? schemas : {};
     mongo_url = mongo_url ? mongo_url : '';
