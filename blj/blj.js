@@ -20,8 +20,7 @@ class BLJ{
     });
     SDK.start({
       schemas: Schemas,
-      kafka_url: 'kafka:123',
-      mongo_url: '123'
+      kafka_url: 'kafka:9092',
     });
   }
   findFunc(name){

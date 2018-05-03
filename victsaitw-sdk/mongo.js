@@ -34,7 +34,7 @@ class Database extends EventEmitter{
     const schema = Joi.object().keys({
       db: Joi.string().required(),
       collection: Joi.string().required(),
-      query: Joi.object(),
+      query: Joi.object().required(),
     });
     return Joi.validate(data, schema);
   }
@@ -44,8 +44,35 @@ class Database extends EventEmitter{
         inData.collection).findOne(inData.query);
     });
   }
+  validateUpdateOne(data){
+    const schema = Joi.object().keys({
+      db: Joi.string().required(),
+      collection: Joi.string().required(),
+      query: Joi.object().required(),
+      content: Joi.object().required()
+    });
+    return Joi.validate(data, schema);
+  }
   updateOne(data){
-
+    return this.validateUpdateOne(data).then(inData => {
+      return this.connection.db(inData.db).collection(
+        inData.collection).updateOne(
+          inData.query,
+          inData.content,
+        )
+      });
+    })
+  }
+  upsertOne(data){
+    return this.validateUpdateOne(data).then(inData => {
+      return this.connection.db(inData.db).collection(
+        inData.collection
+      ).updateOne(
+        inData.query,
+        inData.content,
+        { upsert: true},
+      )
+    });
   }
 }
 

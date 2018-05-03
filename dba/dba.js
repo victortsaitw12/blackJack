@@ -12,7 +12,10 @@ class DBA{
     SDK.on('kafkaMessage', (data) => {
       return this.protocolHandler(data);
     });
-    SDK.start({mongo_url: '123', kafka_url: '123'});
+    SDK.start({
+      kafka_url: 'kafka:9092',
+      mongo_url: 'mongo:27017'  
+    });
   }
   findFunc(name){
     const fn = this[name];
@@ -215,7 +218,7 @@ class DBA{
         return result;
       });
     }).then(result => {
-      return SDK.mongo.updateOrInser({
+      return SDK.mongo.upsertOne({
         db: 'test',
         collection: 'MemberDB',
         query: {
@@ -229,7 +232,6 @@ class DBA{
       }).then(result => {
         response.update({
           money_in_table: buy_in,
-          result: 'SUCCESS'
         });
         return result;  
       });

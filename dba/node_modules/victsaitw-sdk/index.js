@@ -9,6 +9,8 @@ class SDK extends EventEmitter{
     super();
     this.state = null;
     this.protocol = null;
+    this.mongo_url = null;
+    this.kafka_url = null;
     this.mongo = mongo;
     this.kafka = kafka;
     this.mongo.on('stateChange', this.stateChange.bind(this));
@@ -19,17 +21,19 @@ class SDK extends EventEmitter{
     return new Date().valueOf() + '' + process.pid;
   }
   start({schemas, mongo_url, kafka_url}){
+    this.mongo_url = mongo_url;
+    this.kafka_url = kafka_url;
     schemas = schemas ? schemas : {};
     if (mongo_url){
       this.mongo.start({
         mongo: {
-          url: 'mongodb://mongo:27017'  
+          url: 'mongodb://' + mongo_url,
         }
       });
     }
     if (kafka_url){
       this.kafka.start({
-        url: 'kafka:9092',
+        url: kafka_url,
         self_queue: process.env.BIND_QUEUE,
         group_queue: process.env.BIND_POOL,
       });
@@ -75,8 +79,8 @@ class SDK extends EventEmitter{
   stateChange(state){
     console.log('kafka state:', this.kafka.state);
     console.log('mong state:', this.mongo.state);
-    if('ready' == this.kafka.state &&
-       'ready' == this.mongo.state){
+    if((!this.kafka_url || 'ready' == this.kafka.state) &&
+       (!this.mongo_url || 'ready' == this.mongo.state)){
       this.state = 'ready';
       this.emit('stateChange', this.state);
     }

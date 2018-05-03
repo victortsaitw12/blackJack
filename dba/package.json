@@ -15,6 +15,6 @@
     "mongodb": "^3.0.7",
     "no-kafka": "^3.2.9",
     "ramda": "^0.25.0",
-    "victsaitw-sdk": "^1.0.38"
+    "victsaitw-sdk": "^1.0.39"
   }
 }

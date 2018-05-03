@@ -21,6 +21,6 @@
     "no-kafka": "^3.2.9",
     "ramda": "^0.25.0",
     "sinon": "^4.5.0",
-    "victsaitw-sdk": "^1.0.38"
+    "victsaitw-sdk": "^1.0.39"
   }
 }
