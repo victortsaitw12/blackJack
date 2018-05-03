@@ -1,5 +1,6 @@
 'use strict'
 const Joi = require('joi');
+const R = require('ramda');
 class Payload{
   constructor(proto, data){
     this.content = Object.assign({
@@ -10,12 +11,19 @@ class Payload{
   }
   update(data){
     this.content = Object.assign(this.content, data);
-    this._timeout = data.timeout * 1000;
-    this._to_topic = data.to_topic;
+    if (data.timeout){
+      this._timeout = data.timeout * 1000;
+    }
+    if (data.to_topic){
+      this._to_topic = data.to_topic;
+    }
     return this;
   }
-  find(key){
-    return this.content[key];
+  find(key, defaul){
+    if(!defaul){
+      defaul = undefined;
+    }
+    return R.pathOr(defaul, [key], this.content);
   }
   toObject(){
     return this.content;
@@ -51,6 +59,11 @@ class Protocol{
     this.schemas = schemas;
   }
   validate(protocol){
+    if (!this.schemas || Object.keys(this.schemas).length == 0){
+      return Promise.resolve().then(() => {
+        return new Payload(protocol.proto, protocol);
+      });
+    }
     return Promise.resolve(protocol).then(in_protocol => {
       const schema = this.schemas[in_protocol.proto];
       if (!schema){

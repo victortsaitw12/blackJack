@@ -2,15 +2,19 @@ const expect = require('chai').expect;
 const Table = require('./table/table');
 const Player = require('./table/player');
 const blj = require('./blj');
+const SDK = require('victsaitw-sdk');
+const sinon = require('sinon');
 const R = require('ramda');
 describe('BLJ:Test Handler', () => {
-  let proto;
+  let proto, stub;
   before(() => {
-     proto = {
-       proto: 'TEST_HANDLER_PL',
-       user_id: 11763600,
-       from_topic: 'web1'
-     };
+    blj.start();
+    blj.state = 'ready';
+    proto = {
+      proto: 'TEST_HANDLER_PL',
+      user_id: 11763600,
+      from_topic: 'web1'
+    };
   });
   it('test protocol handler:success', (done) => {
     blj.protocolHandler(
@@ -47,7 +51,10 @@ describe('BLJ:Test Handler', () => {
 });
 
 describe('BLJ:GCT2BLJ_REQ_JOIN_TABLE', () => {
+  let stub;
   beforeEach(() => {
+    blj.start();
+    stub = undefined;
     blj.tables = {};  
   });
   it('findTablesWithSeats:no tables', () => {
@@ -103,15 +110,25 @@ describe('BLJ:GCT2BLJ_REQ_JOIN_TABLE', () => {
     expect(new_id).to.be.equal(3);
   });
   it('onGCT2BLJ_REQ_JOIN_TABLE', (done) => {
-    blj.send2DBA = () => { done() };
-    blj.onGCT2BLJ_REQ_JOIN_TABLE({
-      area: 'coin_100',
-      user_id: 11763600,
+    Promise.resolve().then(() => {
+      stub = sinon.stub(SDK, 'send2XYZ').callsFake((data) => {
+        console.log(data);  
+        return Promise.resolve();
+      });
+      return ;
+    }).then(() => {
+      return blj.onGCT2BLJ_REQ_JOIN_TABLE({
+        seq: SDK.sequence,
+        area: 'coin_100',
+        user_id: 11763600,
+      });
+    }).then(() => {
+      SDK.send2XYZ.restore();  
+      done();
+    }).catch(err => {
+      console.log(err);
+      SDK.send2XYZ.restore();  
+      done(err);
     });
-  });
-  it('uniq', () => {
-    var id = new Date().valueOf() + '' + process.pid;
-    console.log(id);
-    console.log(process.pid);
   });
 });

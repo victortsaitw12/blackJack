@@ -24,7 +24,7 @@ class StateMachine{
     this.state.timeout(this);
   }
   onData(proto){
-    this.state.onData({
+    return this.state.onData({
       stateMachine: this,
       proto: proto,
     });

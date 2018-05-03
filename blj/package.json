@@ -4,7 +4,7 @@
   "description": "dba",
   "main": "index.js",
   "scripts": {
-    "test": "./noode_modules/mocha/bin/mocha table/protocol.test.js -w",
+    "test": "noode_modules/mocha/bin/mocha table/blj.test.js -w",
     "start": "node index.js"
   },
   "author": "",
@@ -21,6 +21,6 @@
     "no-kafka": "^3.2.9",
     "ramda": "^0.25.0",
     "sinon": "^4.5.0",
-    "victsaitw-sdk": "^1.0.32"
+    "victsaitw-sdk": "^1.0.38"
   }
 }

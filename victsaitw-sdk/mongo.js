@@ -44,6 +44,9 @@ class Database extends EventEmitter{
         inData.collection).findOne(inData.query);
     });
   }
+  updateOne(data){
+
+  }
 }
 
 module.exports = new Database();

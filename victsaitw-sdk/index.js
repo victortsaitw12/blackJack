@@ -20,18 +20,20 @@ class SDK extends EventEmitter{
   }
   start({schemas, mongo_url, kafka_url}){
     schemas = schemas ? schemas : {};
-    mongo_url = mongo_url ? mongo_url : '';
-    kafka_url = kafka_url ? kafka_url : '';
-    this.mongo.start({
-      mongo: {
-        url: 'mongodb://mongo:27017'  
-      }
-    });
-    this.kafka.start({
-      url: 'kafka:9092',
-      self_queue: process.env.BIND_QUEUE,
-      group_queue: process.env.BIND_POOL,
-    });
+    if (mongo_url){
+      this.mongo.start({
+        mongo: {
+          url: 'mongodb://mongo:27017'  
+        }
+      });
+    }
+    if (kafka_url){
+      this.kafka.start({
+        url: 'kafka:9092',
+        self_queue: process.env.BIND_QUEUE,
+        group_queue: process.env.BIND_POOL,
+      });
+    }
     this.protocol = new Protocol(schemas); 
   }
   sendWithTimeout(payload){

@@ -4,9 +4,9 @@ class Join{
   constructor(){
     this.name = 'join';
   }
-  onData(data){
-    data.proto.state = this.name;
-    return data.stateMachin.table.onData(data.proto);
+  onData({stateMachine, proto}){
+    proto.state = this.name;
+    return stateMachine.table.onData(proto);
   }
   changeState(stateMachine){
     console.log('changeState:', this.name);
@@ -15,8 +15,7 @@ class Join{
   timeout(stateMachine){
     console.log('timeout:', this.name);
     const checkPool = di.resolve('checkPool');
-    stateMachine.stop();
-    // stateMachine.changeState(checkPool);
+    stateMachine.changeState(checkPool);
   }
 }
 

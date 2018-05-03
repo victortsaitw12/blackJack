@@ -20,7 +20,7 @@ SDK.kafka.on('kafkaMessage', (proto) => {
   register.eventTrigger(proto);
 });
 const startSDK = () => {
-  SDK.start({});
+  SDK.start({mongo_url: '123', kafka_url: '123'});
 }
 
 setTimeout(startSDK, 20000);

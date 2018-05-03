@@ -3,7 +3,7 @@ const SDK = require("victsaitw-sdk");
 const StateMachine = require('./state');
 const Schemas = require('./table/schemas');
 const R = require('ramda');
-const di = require('../di');
+const di = require('./di');
 const asClass = require('awilix').asClass;
 const asValue = require('awilix').asValue;
 class BLJ{
@@ -18,7 +18,11 @@ class BLJ{
     SDK.on('kafkaMessage', (data) => {
       return this.protocolHandler(data);
     });
-    SDK.start({schemas: Schemas});
+    SDK.start({
+      schemas: Schemas,
+      kafka_url: 'kafka:123',
+      mongo_url: '123'
+    });
   }
   findFunc(name){
     const fn = this[name];
@@ -53,8 +57,9 @@ class BLJ{
     );
     req.update({ seq: SDK.sequence });
     req.timeout = 10;
-    this.send2DBA(packet).then(data => {
-      container.register({
+    this.send2DBA(req).then(data => {
+      console.log(data);
+      di.register({
         serverConfig: asValue(data.rsp.config),
       });
       this.state = 'ready';
@@ -118,50 +123,55 @@ class BLJ{
     ])({new_table_id, available})
   }
   onGCT2BLJ_REQ_JOIN_TABLE(protocol){
-    if (!R.equeals('ready', this.state){
-      throw new Error('Server is not ready.');
-    }
     // set the default response.
     let response = SDK.protocol.makeEmptyProtocol(
       'BLJ2GCT_RSP_JOIN_TABLE'
     );
     response.update({
       to_topic: protocol.fromTopic,
-      seq_back: data.req.seq,
+      seq_back: protocol.seq,
       player: {},
       result: 'FALSE'
     });
+    if (!R.equals('ready', this.state)){
+      SDK.send2XYZ(response);
+      throw new Error('Server is not ready.');
+    }
     // find or creat an available table.
     const available = this.findTableOrCreateNewOne();
+    console.log(`available table id:${available.table_id}`);
     this.tables[available.table_id] = available.join_table;
     // prepare the request protocol.
     let packet = SDK.protocol.makeEmptyProtocol('BLJ2DBA_REQ_JOIN_TABLE');
     packet.update({
       seq: SDK.sequence,
-      area: protocol.area,
+      area: protocol.find('area'),
       table_id: available.table_id,
-      user_id: protocol.user_id,
+      user_id: protocol.find('user_id'),
     });
     packet.timeout = 10;
-    this.send2DBA(
+    return this.send2DBA(
       packet
     ).then(R.cond([
       [(data) => {
-        return R.equeals('SUCCESS', data.rsp.result);  
+        return R.equals('SUCCESS', data.rsp.result);  
       },
       (data) => {
         let player_obj = available.join_table.onData(Object.assign({
           proto: 'STATE_NTF_JOIN_TABLE',
-        }, data);
+        }, data));
+        console.log(player_obj);
         response.update({
-          player: player,
-          result: DBA.rsp.result,
+          table_id: available.table_id,
+          area: protocol.find('area'),
+          player: player_obj,
+          result: data.rsp.result,
         });
         return SDK.send2XYZ(response);
       }],
       [R.T, (data) => {
         response.update({
-          result: DBA.rsp.result,
+          result: data.rsp.result,
         });
         return SDK.send2XYZ(response);
       }]
@@ -169,6 +179,93 @@ class BLJ{
       console.log(err);  
       return SDK.send2XYZ(response);
     });
-  } 
+  }
+  onGCT2BLJ_REQ_TABLE_INFO(protocol){
+    let response = SDK.protocol.makeEmptyProtocol(
+      'BLJ2GCT_RSP_TABLE_INFO'
+    );
+    response.update({
+      to_topic: protocol.fromTopic,
+      seq_back: protocol.seq,
+      table_id: protocol.find('table_id'),
+      result: 'FALSE'
+    });
+    const table_id = protocol.find('table_id', -1);
+    const table = this.tables[table_id];
+    if (!table){
+      return SDK.send2XYZ(response);
+    }
+    const table_info = table.onData({
+      proto: 'GCT2BLJ_REQ_TABLE_INFO', 
+    });
+    response.update({
+      sit: table_info.sit,
+      stand: table_info.stand,
+    });
+    return SDK.send2XYZ(response);
+  }
+  onGCT2BLJ_REQ_BUY_IN(protocol){
+    let response = SDK.protocol.makeEmptyProtocol(
+      'BLJ2GCT_RSP_BUY_IN'
+    );
+    const area = protocol.find('area', '');
+    const table_id = protocol.find('table_id', -1);
+    const user_id = protocol.find('user_id', -1);
+    response.update({
+      to_topic: protocol.fromTopic,
+      seq_back: protocol.seq,
+      area: area,
+      table_id: table_id,
+      user_id: user_id,
+      money_in_pocket: -1,
+      money_in_table: -1,
+      result: 'FALSE'
+    });
+    const table = this.tables[table_id];
+    if (!table){
+      return SDK.send2XYZ(response);
+    }
+    const player_pl = table.onData({
+      proto: 'GCT2BLJ_REQ_PLAYER_INFO',
+      user_id: user_id
+    });
+    if (!player_pl.player){
+      return SDK.send2XYZ(response);
+    }
+    return Promise.resolve(() => {
+      let req_dba_buy_in = SDK.protocol.makeEmptyProtocol(
+        'BLJ2DBA_REQ_BUY_IN'
+      );
+      req_dba_buy_in.update({
+        seq: SDK.sequence,
+        area: area,
+        table_id: table_id,
+        user_id: user_id,
+        buy_in: protocol.find('buy_in', 0),
+        timeout: 10,
+      });
+      return this.send2DBA(req_dba_buy_in);
+    }).then(data => {
+      if ('FALSE' == data.rsp.result){
+        return SDK.send2XYZ(response);
+      }
+      const table_rsp = table.onData({
+        proto: 'GCT2BLJ_REQ_BUY_IN_TABLE',
+        user_id: user_id,
+        money_in_table: R.pathOf(0, ['rsp', 'money_in_table'], data),
+        money_in_pocket: R.pathOf(0, ['rsp', 'money_in_pocket'], data),
+      });
+      console.log(`table buy_in success:${JSON.stringify(table_rsp)}`);
+      response.update({
+        money_in_pocket: R.pathOf(0, ['player', 'money_in_pocket'], table_obj),
+        money_in_table: R.path(0, ['player', 'money_in_table'], table_obj),
+        result: 'SUCCESS',
+      });
+      return SDK.send2XYZ(response);
+    }).catch(err => {
+      console.log(err);
+      return SDK.send2XYZ(response);
+    };
+  };
 };
 module.exports = new BLJ();

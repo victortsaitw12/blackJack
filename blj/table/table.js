@@ -1,6 +1,7 @@
 'use strict'
 const R = require('ramda');
 const SDK = require("victsaitw-sdk");
+const Player = require('./player');
 class Table{
   constructor(config){
     this.players = {};
@@ -47,6 +48,29 @@ class Table{
       stand: this.listStandPlayerPL(),
       from_topic: 'temp',
     });
+  }
+  onGCT2BLJ_REQ_PLAYER_INFO(protocol){
+    let ret = {
+      proto: 'BLJ2GCT_RSP_PLAYER_INFO',
+    };
+    const player = this.players[protocol.user_id];
+    if (!player){
+      return ret;
+    }
+    return ret.player = player.toObject();
+  }
+  onGCT2BLJ_REQ_BUY_IN_TABLE(protocol){
+    let ret = {
+      proto: 'GCT2BLJ_RSP_BUY_IN_TABLE',
+      result: 'FALSE',
+    };
+    const player = this.players[protocol.user_id],
+    if (!player){
+      return ret;
+    }
+    player.money_in_pocket = protocol.money_in_pocket;
+    player.money_in_table = protocol.money_in_table;
+    return ret.player = player.toObject();
   }
   onGCT2BLJ_REQ_JOIN_TABLE(protocol){
     return;

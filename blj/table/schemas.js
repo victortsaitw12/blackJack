@@ -70,6 +70,8 @@ module.exports = {
   BLJ2GCT_RSP_JOIN_TABLE: Joi.object().keys({
     proto: Joi.string().required(),
     seq_back: Joi.number().integer().required(),
+    area: Joi.string().required(),
+    table_id: Joi.number().integer().required(),
     player: Joi.object(),
     result: Joi.string().required(),
     from_topic: Joi.string(),
