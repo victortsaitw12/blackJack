@@ -264,7 +264,7 @@ class BLJ{
     }).catch(err => {
       console.log(err);
       return SDK.send2XYZ(response);
-    };
+    });
   };
 };
 module.exports = new BLJ();

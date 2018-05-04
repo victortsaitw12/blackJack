@@ -64,7 +64,7 @@ class Table{
       proto: 'GCT2BLJ_RSP_BUY_IN_TABLE',
       result: 'FALSE',
     };
-    const player = this.players[protocol.user_id],
+    const player = this.players[protocol.user_id];
     if (!player){
       return ret;
     }

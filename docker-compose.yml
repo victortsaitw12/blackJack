@@ -15,7 +15,6 @@ services:
     links:
       - zookeeper:zk
     environment:
-      # KAFKA_CREATE_TOPICS: "dbaPool:3:1,dba:1:1,blj:1:1,webPool:2:1,web1:1:1,web2:1:1"
       KAFKA_ADVERTISED_HOST_NAME: kafka
       KAFKA_HOST_NAME: kafka
       KAFKA_ADVERTISED_PORT: 9092
@@ -36,47 +35,39 @@ services:
       APPLICATION_SECRET: letmein
       KM_ARGS: -Djava.net.preferIPv4Stack=true
 
-  #elasticsearch:
-  #  image: docker.elastic.co/elasticsearch/elasticsearch:5.6.3
-  #  ports:
-  #    - "9200:9200"
-  #    - "9300:9300"
-  #  environment:
-  #    - xpack.security.enabled=false
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.2.4
+    container_name: elasticsearch
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ELASTIC_USERNAME: 'elastic'
+      ELASTIC_PASSWORD: '123'
+      DISCOVERY_TYPE: 'single-node'
 
-  #connect:
-  #  image: confluentinc/cp-kafka-connect:3.3.0
-  #  ports:
-  #    - 8083:8083
-  #  depends_on:
-  #    - zookeeper
-  #    - kafka
-  #  volumes:
-  #    - $PWD/connect-plugins:/connect-plugins
-  #  environment:
-  #    CONNECT_BOOTSTRAP_SERVERS: kafka:9092
-  #    CONNECT_REST_PORT: 8083
-  #    CONNECT_GROUP_ID: "connect"
-  #    CONNECT_CONFIG_STORAGE_TOPIC: connect-config
-  #    CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
-  #    CONNECT_STATUS_STORAGE_TOPIC: connect-status
-  #    CONNECT_REPLICATION_FACTOR: 1
-  #    CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
-  #    CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
-  #    CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
-  #    CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
-  #    CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-  #    CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
-  #    CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-  #    CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-  #    CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
-  #    CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-  #    CONNECT_REST_ADVERTISED_HOST_NAME: "connect"
-  #    CONNECT_ZOOKEEPER_CONNECT: zookeeper:2181
-  #    CONNECT_PLUGIN_PATH: /connect-plugins
-  #    CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
-  #    CONNECT_LOG4J_LOGGERS: org.reflections=ERROR
-  #    CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-3.3.0.jar
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.2.4
+    volumes:
+      - "./elk/kibana.yml:/usr/share/kibana/config/kibana.yml"
+    ports:
+      - "5601:5601"
+    links:
+      - elasticsearch
+    depends_on:
+      - elasticsearch
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:6.2.4
+    volumes:
+      - "./elk/logstash.conf:/config-dir/logstash.conf"
+    command: logstash -f /config-dir/logstash.conf
+    ports:
+      - "9600:9600"
+      - "7777:7777"
+    links:
+      - elasticsearch
+      - kafka
 
   mongo:
     image: mongo:3.2
@@ -112,24 +103,24 @@ services:
       BIND_POOL: 'webPool'
       BIND_KEY: 'web1_key'
 
-  # web2:
-  #  build: ./web
-  #  command: nodemon index.js
-  #  volumes:
-  #    - ./web:/app
-  #  depends_on:
-  #    - nginx
-  #    - redis
-  #  ports:
-  #    - "8082:8082"
-  #  environment:
-  #    PORT: 8082
-  #    DBA_POOL: 'dbaPool'
-  #    BLJ_QUEUE: 'blj'
-  #    BLJ_KEY: 'blj_key'
-  #    BIND_QUEUE: 'web2'
-  #    BIND_POOL: 'webPool'
-  #    BIND_KEY: 'web2_key'
+  web2:
+    build: ./web
+    command: nodemon index.js
+    volumes:
+      - ./web:/app
+    depends_on:
+      - nginx
+      - redis
+    ports:
+      - "8082:8082"
+    environment:
+      PORT: 8082
+      DBA_POOL: 'dbaPool'
+      BLJ_QUEUE: 'blj'
+      BLJ_KEY: 'blj_key'
+      BIND_QUEUE: 'web2'
+      BIND_POOL: 'webPool'
+      BIND_KEY: 'web2_key'
 
   dba:
     build: ./dba

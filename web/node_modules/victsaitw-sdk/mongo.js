@@ -60,8 +60,7 @@ class Database extends EventEmitter{
           inData.query,
           inData.content,
         )
-      });
-    })
+    });
   }
   upsertOne(data){
     return this.validateUpdateOne(data).then(inData => {
