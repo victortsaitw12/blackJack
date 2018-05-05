@@ -2,7 +2,7 @@
 const express = require('express');
 const SDK = require('victsaitw-sdk');
 const register = require('./register');
-const app = express.createServer();
+const app = express();
 let user = {
   area: 'coin_100',
   id: 11763600,
@@ -11,7 +11,7 @@ let user = {
 };
 app.get('/', (req, res) => {
   res.writeHead(200, {'Content-Type': 'text/html'});
-  res.end(`<h1>${process.env.MESSAGE}</h1>`);
+  res.end(`<h1>${process.env.MESSAGE} and port ${process.env.PORT}</h1>`);
 });
 app.get('/join', (req, res) => {
   let packet = SDK.protocol.makeEmptyProtocol('GCT2BLJ_REQ_JOIN_TABLE');
@@ -87,4 +87,8 @@ app.get('/signUp', (req, res) => {
     res.end(`<h1>SIGN FAIL:${err.message}</h1>`);
   });
 });
+app.get('/ws', (req, res) => {
+  res.sendFile( __dirname + '/page/webclient.html');  
+});
+console.log(`web listen on ${process.env.PORT}`);
 app.listen(process.env.PORT);

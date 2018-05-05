@@ -19,6 +19,7 @@
     "no-kafka": "^3.2.9",
     "ramda": "^0.25.0",
     "victsaitw-sdk": "^1.0.40",
-    "websocket": "^1.0.26"
+    "websocket": "^1.0.26",
+    "ws": "^5.1.1"
   }
 }
