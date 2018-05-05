@@ -222,6 +222,7 @@ class BLJ{
     });
     const table = this.tables[table_id];
     if (!table){
+      console.log('CAN NOT FIND THE TABLE');
       return SDK.send2XYZ(response);
     }
     const player_pl = table.onData({
@@ -229,9 +230,10 @@ class BLJ{
       user_id: user_id
     });
     if (!player_pl.player){
+      console.log('CONNOT FIND THE USER');
       return SDK.send2XYZ(response);
     }
-    return Promise.resolve(() => {
+    return Promise.resolve().then(() => {
       let req_dba_buy_in = SDK.protocol.makeEmptyProtocol(
         'BLJ2DBA_REQ_BUY_IN'
       );
@@ -241,23 +243,24 @@ class BLJ{
         table_id: table_id,
         user_id: user_id,
         buy_in: protocol.find('buy_in', 0),
-        timeout: 10,
       });
+      req_dba_buy_in.timeout = 10;
       return this.send2DBA(req_dba_buy_in);
     }).then(data => {
+      console.log(data);
       if ('FALSE' == data.rsp.result){
         return SDK.send2XYZ(response);
       }
       const table_rsp = table.onData({
         proto: 'GCT2BLJ_REQ_BUY_IN_TABLE',
         user_id: user_id,
-        money_in_table: R.pathOf(0, ['rsp', 'money_in_table'], data),
-        money_in_pocket: R.pathOf(0, ['rsp', 'money_in_pocket'], data),
+        money_in_table: R.pathOr(0, ['rsp', 'money_in_table'], data),
+        money_in_pocket: R.pathOr(0, ['rsp', 'money_in_pocket'], data),
       });
       console.log(`table buy_in success:${JSON.stringify(table_rsp)}`);
       response.update({
-        money_in_pocket: R.pathOf(0, ['player', 'money_in_pocket'], table_obj),
-        money_in_table: R.path(0, ['player', 'money_in_table'], table_obj),
+        money_in_pocket: R.pathOr(0, ['money_in_pocket'], table_rsp),
+        money_in_table: R.pathOr(0, ['money_in_table'], table_rsp),
         result: 'SUCCESS',
       });
       return SDK.send2XYZ(response);

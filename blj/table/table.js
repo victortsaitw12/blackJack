@@ -49,29 +49,6 @@ class Table{
       from_topic: 'temp',
     });
   }
-  onGCT2BLJ_REQ_PLAYER_INFO(protocol){
-    let ret = {
-      proto: 'BLJ2GCT_RSP_PLAYER_INFO',
-    };
-    const player = this.players[protocol.user_id];
-    if (!player){
-      return ret;
-    }
-    return ret.player = player.toObject();
-  }
-  onGCT2BLJ_REQ_BUY_IN_TABLE(protocol){
-    let ret = {
-      proto: 'GCT2BLJ_RSP_BUY_IN_TABLE',
-      result: 'FALSE',
-    };
-    const player = this.players[protocol.user_id];
-    if (!player){
-      return ret;
-    }
-    player.money_in_pocket = protocol.money_in_pocket;
-    player.money_in_table = protocol.money_in_table;
-    return ret.player = player.toObject();
-  }
   onGCT2BLJ_REQ_JOIN_TABLE(protocol){
     return;
   }
@@ -118,8 +95,36 @@ class Table{
       money_in_table: proto.rsp.money_in_table,
       nickname: proto.rsp.nickname
     });
-    this.players[player.user_id] = player;
+    this.players[player.userId] = player;
+    console.log(`table ${this.table_config.table_id} join the user ${player.userId} from ${Object.keys(this.players)}`);
     return player.toObject();
+  }
+  onGCT2BLJ_REQ_BUY_IN_TABLE(protocol){
+    let ret = {
+      proto: 'GCT2BLJ_RSP_BUY_IN_TABLE',
+      result: 'FALSE',
+    };
+    const player = this.players[protocol.user_id];
+    console.log(`table ${this.table_config.table_id} find the user ${protocol.user_id} from ${Object.keys(this.players)}`);
+    if (!player){
+      return ret;
+    }
+    player.moneyInPocket = protocol.money_in_pocket;
+    player.moneyInTable = protocol.money_in_table;
+    return ret.player = player.toObject();
+  }
+  onGCT2BLJ_REQ_PLAYER_INFO(protocol){
+    let ret = {
+      proto: 'BLJ2GCT_RSP_PLAYER_INFO',
+    };
+    console.log(`table ${this.table_config.table_id} cannot find the user ${protocol.user_id} from ${Object.keys(this.players)}`);
+    const player = this.players[protocol.user_id];
+    if (!player){
+      console.log(`table ${this.table_config.table_id} cannot find the user`);
+      return ret;
+    }
+    ret.player = player.toObject();
+    return ret;
   }
 }
 

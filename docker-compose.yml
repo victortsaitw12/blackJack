@@ -35,39 +35,39 @@ services:
       APPLICATION_SECRET: letmein
       KM_ARGS: -Djava.net.preferIPv4Stack=true
 
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.2.4
-    container_name: elasticsearch
-    ports:
-      - "9200:9200"
-      - "9300:9300"
-    environment:
-      ELASTIC_USERNAME: 'elastic'
-      ELASTIC_PASSWORD: '123'
-      DISCOVERY_TYPE: 'single-node'
+  #elasticsearch:
+  #  image: docker.elastic.co/elasticsearch/elasticsearch:6.2.4
+  #  container_name: elasticsearch
+  #  ports:
+  #    - "9200:9200"
+  #    - "9300:9300"
+  #  environment:
+  #    ELASTIC_USERNAME: 'elastic'
+  #    ELASTIC_PASSWORD: '123'
+  #    DISCOVERY_TYPE: 'single-node'
 
-  kibana:
-    image: docker.elastic.co/kibana/kibana:6.2.4
-    volumes:
-      - "./elk/kibana.yml:/usr/share/kibana/config/kibana.yml"
-    ports:
-      - "5601:5601"
-    links:
-      - elasticsearch
-    depends_on:
-      - elasticsearch
+  #kibana:
+  #  image: docker.elastic.co/kibana/kibana:6.2.4
+  #  volumes:
+  #    - "./elk/kibana.yml:/usr/share/kibana/config/kibana.yml"
+  #  ports:
+  #    - "5601:5601"
+  #  links:
+  #    - elasticsearch
+  #  depends_on:
+  #    - elasticsearch
 
-  logstash:
-    image: docker.elastic.co/logstash/logstash:6.2.4
-    volumes:
-      - "./elk/logstash.conf:/config-dir/logstash.conf"
-    command: logstash -f /config-dir/logstash.conf
-    ports:
-      - "9600:9600"
-      - "7777:7777"
-    links:
-      - elasticsearch
-      - kafka
+  #logstash:
+  #  image: docker.elastic.co/logstash/logstash:6.2.4
+  #  volumes:
+  #    - "./elk/logstash.conf:/config-dir/logstash.conf"
+  #  command: logstash -f /config-dir/logstash.conf
+  #  ports:
+  #    - "9600:9600"
+  #    - "7777:7777"
+  #  links:
+  #    - elasticsearch
+  #    - kafka
 
   mongo:
     image: mongo:3.2
@@ -147,7 +147,6 @@ services:
       - redis
       - kafka
     environment:
-      DBA_POOL: 'dbaPool'
-      BIND_QUEUE: 'blj'
-      BIND_POOL: ''
-      BIND_KEY: 'blj_key'
+      DBA_POOL: "dbaPool"
+      BIND_QUEUE: "blj"
+      BIND_POOL: ""

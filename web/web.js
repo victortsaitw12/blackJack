@@ -2,7 +2,7 @@
 const express = require('express');
 const SDK = require('victsaitw-sdk');
 const register = require('./register');
-const app = new express();
+const app = express.createServer();
 let user = {
   area: 'coin_100',
   id: 11763600,
@@ -38,7 +38,7 @@ app.get('/buy_in', (req, res) => {
     seq: SDK.sequence,
     area: user.area,
     table_id: user.table_id,
-    user_id: user.user_id,
+    user_id: user.id,
     buy_in: user.buy_in
   });
   packet.toTopic = process.env.BLJ_QUEUE;

@@ -166,7 +166,7 @@ class DBA{
       console.log(err);  
     });
   }
-  onGCT2BLJ_REQ_BUY_IN(protocol){
+  onBLJ2DBA_REQ_BUY_IN(protocol){
     let response = SDK.protocol.makeEmptyProtocol('DBA2BLJ_RSP_BUY_IN');
     const area = protocol.find('area', '');
     const table_id = protocol.find('table_id', -1);
@@ -182,12 +182,12 @@ class DBA{
       result: 'FALSE'
     });
     response.toTopic = protocol.fromTopic;
-    return Promise.resolve(() => {
+    return Promise.resolve().then(() => {
       return SDK.mongo.findOne({
         db: 'test',
         collection: 'MemberDB',
         query: {
-          _id: user_id,
+          user_id: user_id,
         }
       });
     }).then((data) => {
@@ -197,7 +197,7 @@ class DBA{
       if(!data){
         throw new Error(`user ${user_id} in not in MemberDB`);
       }
-      const money_in_pocket = R.pathOf(0, ['money'], data);
+      const money_in_pocket = R.pathOr(0, ['money'], data);
       if(money_in_pocket > buy_in){
         throw new Error(`user not enough money:${money_in_pocket}`);
       }
@@ -209,9 +209,10 @@ class DBA{
           user_id: user_id,
         },
         content: {
-          money: money_in_pocket - buy_in,  
+          '$set': { money: (money_in_pocket - buy_in)},  
         }
       }).then(result => {
+        console.log(`updateOne ${result}`);
         response.update({
           money_in_pocket: money_in_pocket - buy_in,
         });
@@ -227,9 +228,10 @@ class DBA{
           user_id: user_id,
         },
         content: {
-          money: buy_in,  
+          '$set': {money: buy_in},  
         }
       }).then(result => {
+        console.log(`upsertOne ${result}`);
         response.update({
           money_in_table: buy_in,
         });
