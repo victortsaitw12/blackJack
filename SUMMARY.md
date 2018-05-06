@@ -3,7 +3,7 @@
 * [BlackJackPractice](README.md)
 * [Diagrams](states.md)
 * [MongoDB Schemas](mongodb-schemas.md)
-* [Plateform Protocols](plateform-protocols.md)
+* [Gateway Protocols](plateform-protocols.md)
 * [Game Protocols](protocols.md)
 * [Game API](cards.md)
 * [Basic SDK](basic-sdk.md)

@@ -1,4 +1,4 @@
-# Plateform Protocols
+# Gateway Protocols
 
 ## GCT2GWY\_REQ\_GAME\_PLAY
 
