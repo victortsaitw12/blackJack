@@ -73,6 +73,15 @@ input: sequence, timeout, promise
 output: promise (settled)
 ```
 
+resolveTimeoutRegister
+
+> method
+
+```text
+input: sequence, data
+output: promise (settled)
+```
+
 ## Protocol
 
 ```text
