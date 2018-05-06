@@ -8,4 +8,5 @@
 * [Game API](cards.md)
 * [Basic SDK](basic-sdk.md)
 * [Ｍemo](emo.md)
+* [Gateway API](gateway-api.md)
 
