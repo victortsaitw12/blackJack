@@ -64,6 +64,15 @@ registerTimeoutProtocol
 input: sequence, protocol, resolve, reject
 ```
 
+promiseTimeout
+
+> method
+
+```text
+input: sequence, timeout, promise
+output: promise (settled)
+```
+
 ## Protocol
 
 ```text
