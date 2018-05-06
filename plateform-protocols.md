@@ -5,6 +5,7 @@
 ```text
 seq: sequence
 client_id: int
+toTopic: string
 payload: object
 ```
 
