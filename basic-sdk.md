@@ -56,7 +56,13 @@ sequence
 
 ## Timeout
 
-registerTimeout
+registerTimeoutProtocol
+
+> method
+
+```text
+input: sequence, protocol, resolve, reject
+```
 
 ## Protocol
 
