@@ -16,7 +16,7 @@
     "kafka-node": "^2.6.1",
     "mongodb": "^3.0.7",
     "ramda": "^0.25.0",
-    "victsaitw-sdk": "^1.0.40",
+    "victsaitw-sdk": "^1.0.41",
     "ws": "^5.1.1"
   }
 }

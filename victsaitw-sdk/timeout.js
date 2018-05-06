@@ -39,4 +39,4 @@ class TimeoutRegister{
   }
 }
 
-module.exports = new TimeoutRegister();
+module.exports = TimeoutRegister;

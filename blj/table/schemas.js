@@ -47,6 +47,12 @@ module.exports = {
     user_id: Joi.number().required(),
     from_topic: Joi.string(),
   }).unknown(),
+  GWY2SVR_REQ_GAME_PLAY: Joi.object().keys({
+    proto: Joi.string().required(),
+    seq: Joi.number().integer().required(),
+    payload: Joi.object().required(),
+    from_topic: Joi.string(),
+  }).unknown(),
   BLJ2DBA_REQ_JOIN_TABLE: Joi.object().keys({
     proto: Joi.string().required(),
     seq: Joi.number().integer().required(),

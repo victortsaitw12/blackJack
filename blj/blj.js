@@ -45,6 +45,13 @@ class BLJ{
   onTEST_HANDLER_PL(protocol){
     return 'TEST_SUCCESS';
   }
+  onGWY2SVR_REQ_GAME_PLAY(protocol){
+    let payload = protocol.find('payload', {});
+    return this.protocolHandler(Object.assign(payload, 
+      {
+        from_topic: protocol.fromTopic
+      }));  
+  };
   send2DBA(packet){
     console.log(`send2DBA:${JSON.stringify(packet.toString())}`);
     packet.toTopic = 'dbaPool';
@@ -166,6 +173,7 @@ class BLJ{
           player: player_obj,
           result: data.rsp.result,
         });
+        console.log(response.toString());
         return SDK.send2XYZ(response);
       }],
       [R.T, (data) => {
