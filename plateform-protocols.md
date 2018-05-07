@@ -1,5 +1,20 @@
 # Gateway Protocols
 
+## GCT2GWY\_REQ\_BIND\_USER
+
+```text
+seq: sequence
+clinet_id: int
+user_id: int
+```
+
+## GWY2GCT\_RSP\_BIND\_USER
+
+```text
+seq_back: sequence
+result: string
+```
+
 ## GCT2GWY\_REQ\_GAME\_PLAY
 
 ```text
