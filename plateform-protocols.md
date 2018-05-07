@@ -56,3 +56,11 @@ user_id: int
 payload: object
 ```
 
+## GWY2GCT\_NTF\_GAME\_PLAY
+
+```text
+payload: object
+```
+
+
+
