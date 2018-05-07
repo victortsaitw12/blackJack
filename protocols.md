@@ -196,6 +196,7 @@ result: string
 
 > 1. If user's money in table is less than the config setting, sit\_down\_money, server returns 'FALSE'.
 > 2. If the seat has been occupied, server returns 'FALSE'.
+> 3. If the user has sat, return false.
 
 ```text
 seq: sequence
@@ -209,7 +210,19 @@ seat_id: int
 
 ```text
 seq_back: sequence
+area: string
+table_id: int
+user_id: int
+seat_id: int
 result: string
+```
+
+## BLJ2GCT\_NTF\_START\_HAND
+
+```text
+area: string
+table_id: int
+hand_id: int
 ```
 
 ## GCT2BLJ\_REQ\_BET

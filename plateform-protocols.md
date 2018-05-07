@@ -34,3 +34,10 @@ seq_back: sequence
 payload: object
 ```
 
+## SVR2GWY\_NTF\_GAME\_PLAY
+
+```text
+user_id: int
+payload: object
+```
+

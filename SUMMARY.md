@@ -2,11 +2,11 @@
 
 * [BlackJackPractice](README.md)
 * [Diagrams](states.md)
-* [MongoDB Schemas](mongodb-schemas.md)
-* [Gateway Protocols](plateform-protocols.md)
-* [Game Protocols](protocols.md)
-* [Game API](cards.md)
 * [Basic SDK](basic-sdk.md)
-* [Ｍemo](emo.md)
+* [MongoDB Schemas](mongodb-schemas.md)
 * [Gateway API](gateway-api.md)
+* [Gateway Protocols](plateform-protocols.md)
+* [Game API](cards.md)
+* [Game Protocols](protocols.md)
+* [Ｍemo](emo.md)
 
