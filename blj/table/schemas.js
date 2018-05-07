@@ -149,7 +149,18 @@ module.exports = {
   BLJ2GCT_RSP_SIT_DOWN: Joi.object().keys({
     proto: Joi.string().required(),
     seq_back: Joi.number().integer().required(),
+    table_id: Joi.number().integer().required(),
+    user_id: Joi.number().integer().required(),
+    seat_id: Joi.number().integer().required(),
     result: Joi.string().required(),
+    from_topic: Joi.string(),
+  }).unknown(),
+  GCT2BLJ_NTF_START_HAND: Joi.object().keys({
+    proto: Joi.string().required(),
+    seq: Joi.number().integer().required(),
+    area: Joi.string().required(),
+    table_id: Joi.number().integer().required(),
+    hand_id: Joi.number().integer().required(),
     from_topic: Joi.string(),
   }).unknown(),
   GCT2BLJ_REQ_BET: Joi.object().keys({

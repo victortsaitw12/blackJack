@@ -6,6 +6,30 @@ class Table{
   constructor(config){
     this.players = {};
     this.table_config = config;
+    this.hand_id = -1;
+  }
+  get area(){
+    return R.pathOr('', ['area'], this.table_config);
+  }
+  get table_id(){
+    return R.pathOr(-1, ['table_id'], this.table_config);
+  }
+  broadcast(packet){
+    return R.map(p => {
+      return this.send2User(p.userId, packet);
+    }, this.players);
+  }
+  send2User(user_id, packet){
+    let wrapper = SDK.protocol.makeEmptyProtocol(
+      'SVR2GWY_NTF_GAME_PLAY'
+    );
+    wrapper.toTopic = 'gwy';
+    wrapper.update({
+      user_id: user_id,
+      payload: packet.toObject(),
+    });
+    console.log(`send2User: ${wrapper.toString()}`);
+    return SDK.send2XYZ(wrapper);
   }
   findFunc(name){
     const fn = this[name];
@@ -58,6 +82,13 @@ class Table{
       result: false,
     }
   }
+  onSTATE_REQ_CHECK_SEAT(proto){
+    const available = this.getAvailableSeatIds();
+    return {
+      proto: 'STATE_RSP_CHECK_SEAT',
+      result: available.length == 5 ? false : true,
+    }
+  }
   onSTATE_NTF_START_BET(proto){
     return;
   }
@@ -99,6 +130,19 @@ class Table{
     console.log(`table ${this.table_config.table_id} join the user ${player.userId} from ${Object.keys(this.players)}`);
     return player.toObject();
   }
+  onSTATE_NTF_START_HAND(proto){
+    console.log('start hand');
+    this.hand_id = SDK.sequence;
+    let packet = SDK.protocol.makeEmptyProtocol(
+      'BLJ2GCT_NTF_START_HAND'
+    )
+    packet.update({
+      area: this.area,
+      table_id: this.table_id,
+      hand_id: this.hand_id,
+    });
+    return this.broadcast(packet);
+  }
   onGCT2BLJ_REQ_BUY_IN_TABLE(protocol){
     let ret = {
       proto: 'GCT2BLJ_RSP_BUY_IN_TABLE',
@@ -125,6 +169,44 @@ class Table{
     }
     ret.player = player.toObject();
     return ret;
+  }
+  getOccupiedSeatIds(){
+    return R.reduce((acc, p) => {
+      if(-1 == p.seatId) return acc;
+      return R.concat(acc, [p.seatId])
+    }, [], R.values(this.players));
+  }
+  getAvailableSeatIds(){
+    const seat_ids = R.range(1, 6);
+    const occupied_seat_ids = this.getOccupiedSeatIds();
+    const availables = R.difference(seat_ids, occupied_seat_ids);
+    console.log(`occupied seat ids: ${occupied_seat_ids}`);
+    console.log(`available seat ids: ${availables}`);
+    return availables;
+  }
+  pickAvailableSeatId(){
+    const availables = this.getAvailableSeatIds();
+    if (0 == availables.length){
+      return;
+    }
+    const random_index = Math.floor(Math.random() * availables.length);
+    return R.nth(random_index, availables);
+  }
+  onGCT2BLJ_REQ_SIT_DOWN(protocol){
+    console.log(`table.onGCT2BLJ_REQ_SIT_DOWN ${protocol}`);
+    let seat_id = undefined;
+    if (-1 == protocol.seat_id){
+      seat_id = this.pickAvailableSeatId();
+    } else {
+      seat_id = protocol.seat_id;
+    }
+    const availables = this.getAvailableSeatIds();
+    if(!R.contains(seat_id, availables)){
+      return -1;
+    }
+    const player = this.players[protocol.user_id];
+    player.seatId = seat_id;
+    return player.seatId;
   }
 }
 

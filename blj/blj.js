@@ -277,5 +277,50 @@ class BLJ{
       return SDK.send2XYZ(response);
     });
   };
+  onGCT2BLJ_REQ_SIT_DOWN(protocol){
+    let response = SDK.protocol.makeEmptyProtocol(
+      'BLJ2GCT_RSP_SIT_DOWN'
+    );
+    const area = protocol.find('area', '');
+    const table_id = protocol.find('table_id', -1);
+    const user_id = protocol.find('user_id', -1);
+    const seat_id = protocol.find('seat_id', -1);
+    response.update({
+      to_topic: protocol.fromTopic,
+      seq_back: protocol.seq,
+      area: area,
+      table_id: table_id,
+      user_id: user_id,
+      seat_id: -1,
+      result: 'FALSE'
+    });
+    const table = this.tables[table_id];
+    if (!table){
+      console.log('CAN NOT FIND THE TABLE');
+      return SDK.send2XYZ(response);
+    }
+    const player_pl = table.onData({
+      proto: 'GCT2BLJ_REQ_PLAYER_INFO',
+      user_id: user_id
+    });
+    if (!player_pl.player){
+      console.log('CONNOT FIND THE USER');
+      return SDK.send2XYZ(response);
+    }
+    if(0 < player_pl.player.seat_id){
+      console.log(`User has sat on ${player_pl.player.seat_id}`);
+      return SDK.send2XYZ(response);
+    }
+    let real_seat_id = table.onData(protocol.toObject());
+    if (-1 == real_seat_id){
+      return SDK.send2XYZ(response);
+    }
+    console.log(`real seat:${real_seat_id}`)
+    response.update({
+      seat_id: real_seat_id,
+      result: 'SUCCESS',
+    });
+    return SDK.send2XYZ(response);
+  }
 };
 module.exports = new BLJ();

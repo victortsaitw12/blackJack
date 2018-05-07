@@ -2,6 +2,7 @@
 const init = require('./init');
 const join = require('./join');
 const checkPool = require('./checkPool');
+const checkSeat = require('./checkSeat');
 const startBet = require('./startBet');
 const bet = require('./bet');
 const dealing = require('./dealing');

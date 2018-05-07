@@ -24,6 +24,7 @@ class Player{
     return R.path(['seat_id'], this._config);
   }
   set seatId(seat_id){
+    console.log(`player ${this.userId} sit on ${this.seatId}`);
     this._config.seat_id = seat_id;
   }
   toObject(){

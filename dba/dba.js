@@ -37,6 +37,13 @@ class DBA{
       throw err;
     });
   }
+  onGWY2SVR_REQ_GAME_PLAY(protocol){
+    let payload = protocol.find('payload', {});
+    return this.protocolHandler(Object.assign(payload, 
+      {
+        from_topic: protocol.fromTopic
+      }));  
+  };
   onBLJ2DBA_REQ_CONFIG(protocol){
     // set the default response.
     console.log(protocol);

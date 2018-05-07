@@ -4,6 +4,7 @@ const ws = require('./websocket');
 const R = require('ramda');
 class GWY{
   constructor(){
+    this.user_binding = {};
     this.state = 'init';
     this.ws = null;
   }
@@ -53,13 +54,41 @@ class GWY{
       throw err;
     });
   }
-  send2DBA(packet){
-    console.log(`send2DBA:${JSON.stringify(packet.toString())}`);
-    packet.toTopic = 'dbaPool';
-    return SDK.send2XYZ(packet);
-  }
+  // send2DBA(packet){
+  //   console.log(`send2DBA:${JSON.stringify(packet.toString())}`);
+  //   packet.toTopic = 'dbaPool';
+  //   return SDK.send2XYZ(packet);
+  // }
   triggerWhenReady(){
     this.state = 'ready';
+  }
+  onGCT2GWY_REQ_BIND_USER(protocol){
+    let packet = SDK.protocol.makeEmptyProtocol(
+      'GWY2GCT_RSP_BIND_USER'
+    );
+    const user_id = protocol.find('user_id', -1);
+    const client_id = protocol.find('client_id', -1);
+    packet.update({
+      seq_back: protocol.seq,
+      result: 'FAIL'
+    });
+    return Promise.resolve().then(() => {
+      if (!this.ws.checkConnection(client_id)){
+        throw new Error(`onGCT2GCY_GAME_PLAY:web socket not found ${protocol}`);
+      }
+      if (-1 == user_id){
+        throw new Error(`onGCT2GWY_REQ_BIND_USER:user id is -1`);
+      }
+      return protocol;
+    }).then(() => {
+      this.user_binding[user_id] = client_id;
+      packet.update({
+        result: 'SUCCESS'
+      });
+      return this.ws.send(client_id, packet);
+    }).catch(err => {
+      console.log(err);
+    });
   }
   onGCT2GWY_REQ_GAME_PLAY(protocol){
     console.log(`gwy->onGCT2GWY_REQ_GAME_PLAY:${protocol}`);
@@ -92,6 +121,17 @@ class GWY{
     }).catch(err => {
       console.log(`onGCT2GWY_REQ_GAME_PLAY:${err}`);
     });
+  }
+  onSVR2GWY_NTF_GAME_PLAY(protocol){
+    const user_id = protocol.find('user_id', -1);
+    const client_id = R.pathOr(-1, [user_id], this.user_binding);
+    let packet = SDK.protocol.makeEmptyProtocol(
+      'GWY2GCT_NTF_GAME_PLAY'
+    );
+    packet.update({
+      payload: protocol.find('payload', {})
+    });
+    return this.ws.send(client_id, packet);
   }
   onPARSE_ERROR(protocol){
    console.log(protocol.err);

@@ -14,8 +14,8 @@ class Join{
   }
   timeout(stateMachine){
     console.log('timeout:', this.name);
-    const checkPool = di.resolve('checkPool');
-    stateMachine.changeState(checkPool);
+    const checkSeat = di.resolve('checkSeat');
+    stateMachine.changeState(checkSeat);
   }
 }
 
