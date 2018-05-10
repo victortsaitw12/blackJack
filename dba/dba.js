@@ -1,5 +1,4 @@
 const SDK = require("victsaitw-sdk");
-const NewnewPlugin = require('./api/newnewPlugin');
 const R = require('ramda');
 class DBA{
   constructor(){

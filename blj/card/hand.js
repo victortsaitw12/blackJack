@@ -2,11 +2,14 @@
 const R = require('ramda');
 const Card = require('./card');
 class Hand{
-  constructor(cards){
+  constructor({hand_id, cards}){
+    this._hand_id = hand_id;
     cards = R.when(R.isNil, R.always([]))(cards);
     this._cards = Hand.transformCardStrToCardObjects(cards);
     this._soft_point = 0;
     this._hard_point = 0;
+    this._parent_id = -1;
+    this._option = 'init';
     this.updatePoint();
   }
   updatePoint(){
@@ -51,10 +54,37 @@ class Hand{
     return 2 == this._cards.length && 
           this._cards[0].figure == this._cards[1].figure;
   }
+  get parentId(){
+    return this._parent_id;
+  }
+  get option(){
+    return this._option;
+  }
   push(card){
     this._cards.push(card);
     this.updatePoint();
     return this._cards;
+  }
+  get handId(){
+    return this._hand_id;
+  }
+  toObject(){
+    return Object.assign({
+      proto: 'HAND_PL',
+    }, {
+      hand_id: this.handId,
+      seat_id: Math.floor(this.handId / 100),
+      is_pair: this.isPair,
+      blackJack: this.blackJack,
+      cards: R.map(card => card.toString(), this.cards),
+      soft_point: this.softPoint,
+      hard_point: this.hardPoint,
+      parent_id: this.parentId,
+      option: this.option,
+    });
+  }
+  toString(){
+    return JSON.stringify(this.toObject());
   }
 }
 

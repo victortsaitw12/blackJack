@@ -63,6 +63,7 @@ class GWY{
     this.state = 'ready';
   }
   onGCT2GWY_REQ_BIND_USER(protocol){
+    console.log('onGCT2GWY_REQ_BIND_USER');
     let packet = SDK.protocol.makeEmptyProtocol(
       'GWY2GCT_RSP_BIND_USER'
     );
@@ -107,6 +108,7 @@ class GWY{
       });
       packet.toTopic = protocol.toTopic;
       packet.timeout = 5;
+      console.log(packet.toString());
       return SDK.send2XYZ(packet);
     }).then(data => {
       console.log(data);
@@ -124,6 +126,7 @@ class GWY{
   }
   onSVR2GWY_NTF_GAME_PLAY(protocol){
     const user_id = protocol.find('user_id', -1);
+    console.log(this.user_binding);
     const client_id = R.pathOr(-1, [user_id], this.user_binding);
     let packet = SDK.protocol.makeEmptyProtocol(
       'GWY2GCT_NTF_GAME_PLAY'

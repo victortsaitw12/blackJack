@@ -2,11 +2,15 @@
 const R = require('ramda');
 const SDK = require("victsaitw-sdk");
 const Player = require('./player');
+const Game = require('./game');
+const Deck = require('../card').Deck;
+const Hand = require('../card').Hand;
 class Table{
   constructor(config){
     this.players = {};
     this.table_config = config;
-    this.hand_id = -1;
+    this.game = null;
+    this.deck = null;
   }
   get area(){
     return R.pathOr('', ['area'], this.table_config);
@@ -95,13 +99,78 @@ class Table{
   onSTATE_REQ_BET_COUNT(proto){
     return {
       proto: 'STATE_RSP_BET_COUNT',
-      count: 0,
+      bet: this.game.getAllSeatBetMoney()
     };
   }
-  onSTATE_NTF_DEALING_CARD(proto){
+  getUserIdBySeatId(seat_id){
+    const p = R.find((player) => {
+      return parseInt(seat_id) === player.seatId;  
+    }, R.values(this.players));
+    if(p){
+      return p.userId;
+    }
     return;
+  };
+  onSTATE_NTF_REGISTER_PLAYERS(proto){
+    const bet_seat = this.game.groupBetBySeatId();
+    console.log(`onSTATE_NTF_REGISTER_PLAERS:${JSON.stringify(bet_seat)}`);
+    R.map(seat_id => {
+      const user_id = this.getUserIdBySeatId(seat_id);
+      console.log(`onSTATE_NTF_REGISTER_PLAERS:${user_id}`);
+      this.game.setHandOwner({
+        seat_id: seat_id,
+        user_id: user_id,
+      });
+    }, R.keys(bet_seat));
+    console.log(this.game.getHandOwners());
+  }
+  dealPlayerCards(){
+    const hand_owners = this.game.getHandOwners();
+    const hands = R.mapObjIndexed((user_id, hand_id) => {
+      const hand = new Hand({
+        hand_id: hand_id
+      });
+      hand.push(this.deck.deal());
+      hand.push(this.deck.deal());
+      return hand;
+    }, hand_owners);
+    R.mapObjIndexed((hand, hand_id) => {
+      this.game.registerHand({
+        hand: hand, hand_id: hand_id
+      });
+    }, hands);
+    return this.game.getHands();
+  }
+  dealDealerCards(){
+    const hand = new Hand({hand: 999});
+    hand.push(this.deck.deal());
+    hand.push(this.deck.deal());
+    this.game.registerDealerHand(hand);
+    return this.game.getDealerHand();
+  }
+  onSTATE_NTF_DEALING_CARD(proto){
+    this.dealPlayerCards();
+    this.dealDealerCards();
+    let packet = SDK.protocol.makeEmptyProtocol(
+      'BLJ2GCT_NTF_DEAL_CARD'
+    )
+    packet.update({
+      area: this.area,
+      table_id: this.table_id,
+    });
+    R.mapObjIndexed((hand, hand_id) => {
+      let seat_id = parseInt(hand_id) / 100;
+      let user_id = this.getUserIdBySeatId(seat_id);
+      packet.update({
+        user_id: user_id,
+        seat_id: seat_id,
+        hand: hand.toObject(),
+      });
+      return this.send2User(user_id, packet);
+    }, this.game.getHands());
   }
   onSTATE_REQ_DECIDE_FORK(proto){
+
     return {
       proto: 'STATE_RSP_DECIDE_FORK',
       result: '',
@@ -132,14 +201,15 @@ class Table{
   }
   onSTATE_NTF_START_HAND(proto){
     console.log('start hand');
-    this.hand_id = SDK.sequence;
+    this.game = Game.newGame();
+    this.deck = new Deck(6);
     let packet = SDK.protocol.makeEmptyProtocol(
       'BLJ2GCT_NTF_START_HAND'
     )
     packet.update({
       area: this.area,
       table_id: this.table_id,
-      hand_id: this.hand_id,
+      hand_id: this.game.handId,
     });
     return this.broadcast(packet);
   }
@@ -207,6 +277,33 @@ class Table{
     const player = this.players[protocol.user_id];
     player.seatId = seat_id;
     return player.seatId;
+  }
+  onGCT2BLJ_REQ_BET(protocol){
+    console.log('onGCT2BLJ_REQ_BET');
+    let player = this.players[protocol.user_id];
+    if (R.isNil(player)){
+      throw new Error('player is undefined');
+    }
+    if(!R.isEmpty(protocol.bets)){
+      player.deductMoneyInTable(protocol.bets.bet);
+      this.game.betOnSeat({
+        user_id: protocol.user_id,
+        seat_id: protocol.bets.seat_id,
+        money: protocol.bets.bet
+      });
+    }
+    if(!R.isEmpty(protocol.pair_bets)){
+      player.deductMoneyInTable(protocol.pair_bets.bet);
+      this.game.betOnPair({
+        user_id: protocol.user_id,
+        seat_id: protocol.pair_bets.seat_id,
+        money: protocol.pair_bets.bet
+      });
+    }
+    return {
+      bets: protocol.bets,
+      pair_bets: protocol.pair_bets,
+    }
   }
 }
 

@@ -54,7 +54,7 @@ class WS extends EventEmitter{
       console.log(`send ${packet.toString()}`);
       return connection.send(packet.toString());
     }
-    throw new Error(`connection is disconnected {client_id}`);
+    throw new Error(`connection is disconnected ${client_id}`);
   }
 }
 module.exports = new WS();

@@ -5,7 +5,7 @@ class Card{
     this._card = card;
     this._point = R.pipe(R.head, R.splitEvery(1))(card);
     this._num = Card.getPoint(this._point);
-    this._hard_num= Card.getHardPoint(this._num);
+    this._hard_num = Card.getHardPoint(this._num);
   } 
   get isA(){
     return 'A' == this._point;
@@ -40,6 +40,9 @@ class Card{
   }
   get hardPoint(){
     return this._hard_num;
+  }
+  toString(){
+    return this._card;
   }
 }
 

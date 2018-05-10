@@ -15,9 +15,13 @@ class Bet{
       proto: 'STATE_REQ_BET_COUNT',
       state: this.name,
     });
-    if(0 == rsp.count){
+    if(0 == rsp.bet){
       return stateMachine.changeState(di.resolve('join'));
     }
+    stateMachine.table.onData({
+      proto: 'STATE_NTF_REGISTER_PLAYERS',
+      state: this.name,
+    });
     return stateMachine.changeState(di.resolve('dealing'));
   }
   timeout(stateMachine){

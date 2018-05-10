@@ -5,9 +5,9 @@ class StartBet{
   constructor(){
     this.name = 'startBet';
   }
-  onData(data){
-    data.proto.state = this.name;
-    return data.stateMachin.table.onData(data.proto);
+  onData({stateMachine, proto}){
+    proto.state = this.name;
+    return stateMachine.table.onData(proto);
   }
   changeState(stateMachine){
     console.log('changeState:', this.name);
@@ -15,7 +15,7 @@ class StartBet{
       proto: 'STATE_NTF_START_BET',
       state: this.name,
     });
-    stateMachine.setTimeout(5);
+    stateMachine.setTimeout(10);
   }
   timeout(stateMachine){
     console.log('timeout:', this.name);

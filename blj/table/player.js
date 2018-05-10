@@ -17,6 +17,9 @@ class Player{
   get moneyInTable(){
     return R.path(['money_in_table'], this._config);
   }
+  deductMoneyInTable(money){
+    this._config.money_in_table = this._config.money_in_table - money;
+  }
   set moneyInTable(money){
     this._config.money_in_table = money;
   }

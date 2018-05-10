@@ -6,11 +6,51 @@
          let ws = null;
          let client_id = null;
          let table_id = -1;
+         let seat_id = -1;
          let area = '';
+         let hand_id = -1;
+         let routines = {};
+         routines.onGWY2GCT_RSP_CLIENT_ID = (protocol) => {
+           console.log('onGWY2GCT_RSP_CLIENT_ID:' + protocol.client_id);
+           client_id = protocol.client_id;
+           let bind_protocol = JSON.stringify({
+             proto: 'GCT2GWY_REQ_BIND_USER',
+             seq: 12345,
+             user_id: 11763611,
+             client_id: client_id,
+           })
+           ws.send(bind_protocol);
+           addText("Message is sent..." + bind_protocol);
+         }
+         routines.onBLJ2GCT_NTF_START_HAND = (protocol) => {
+           hand_id = protocol.hand_id;
+           setTimeout(bet, 2);
+         }
+         routines.onBLJ2GCT_RSP_SIT_DOWN = (protocol) => {
+           seat_id = protocol.seat_id;  
+         }
          function addText(text) {
            let old_text = document.getElementById("log").value;
            document.getElementById("log").value = 
            '->' + text + '\n' + old_text;
+         }
+         routines.onGWY2GCT_RSP_GAME_PLAY = (protocol) => {
+           try {
+             let fn = routines['on' + protocol.payload.proto];
+             fn(protocol.payload);
+           } catch(err){
+             addText(err.message);
+             addText('on' + protocol.proto);
+           }
+         }
+         routines.onGWY2GCT_NTF_GAME_PLAY = (protocol) => {
+           try {
+             let fn = routines['on' + protocol.payload.proto];
+             fn(protocol.payload);
+           } catch(err){
+             addText(err.message);
+             addText('on' + protocol.proto);
+           }
          }
          function WebSocketTest() {
             if ("WebSocket" in window) {
@@ -24,17 +64,14 @@
                ws.onmessage = function (evt) { 
                  var received_msg = evt.data;
                  let protocol = JSON.parse(evt.data);
-                 if(protocol.proto == 'GWY2GCT_RSP_CLIENT_ID'){
-                   client_id = protocol.client_id;
-                   let bind_protocol = JSON.stringify({
-                     proto: 'GCT2GWY_REQ_BIND_USER',
-                     seq: 12345,
-                     user_id: 11763611,
-                     client_id: client_id,
-                   })
-                   ws.send(bind_protocol);
+                 try {
+                   let fn = routines['on' + protocol.proto];
+                   fn(protocol);
+                   addText(received_msg);
+                 } catch(err) {
+                   addText(err.message);
+                   addText('on' + protocol.proto);
                  }
-                 addText(received_msg);
                };
                ws.onclose = function() { 
                  // websocket is closed.
@@ -103,6 +140,17 @@
              table_id: 1,
              user_id: 11763611,
              seat_id: -1
+           });
+         }
+         function bet(){
+           send({
+             proto: 'GCT2BLJ_REQ_BET',
+             seq: 789,
+             area: 'coin_100',
+             table_id: 1,
+             user_id: 11763611,
+             bets: {seat_id: seat_id, bet: 1000},
+             pair_bets: {}
            });
          }
       </script>
