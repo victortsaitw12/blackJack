@@ -19,8 +19,8 @@ class Fork{
       proto: 'STATE_REQ_DECIDE_FORK',
       state: this.name,
     });
-    console.log(rsp);
-    if ('play' == rsp.result){
+    console.log(JSON.stringify(rsp));
+    if ('user_play' == rsp.result){
       return stateMachine.changeState(di.resolve('userPlay'));
     }
     if('dealer_play' == rsp.result){

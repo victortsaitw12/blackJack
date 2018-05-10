@@ -57,7 +57,15 @@ class Hand{
   get parentId(){
     return this._parent_id;
   }
+  set parentId(parent_id){
+    this._parent_id = parent_id;
+    return this._parent_id;
+  }
   get option(){
+    return this._option;
+  }
+  set option(user_option){
+    this._option = user_option;
     return this._option;
   }
   push(card){
@@ -67,6 +75,9 @@ class Hand{
   }
   get handId(){
     return this._hand_id;
+  }
+  get seatId(){
+    return Math.floor(this.handId / 100);
   }
   toObject(){
     return Object.assign({

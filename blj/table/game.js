@@ -9,6 +9,7 @@ class Game{
     this._hand_owners = {};
     this._hands = {};
     this._dealer_hand = null;
+    this._operating_hand = null;
   }
   registerHand({hand_id, hand}){
     this._hands[hand_id] = hand;
@@ -88,7 +89,46 @@ class Game{
     });
     return moneyBySeat(R.toPairs(this._bets));
   }
-  
+  isDealerBlackJack(){
+    return this._dealer_hand.blackJack;
+  }
+  selectTheOperationHand(){
+    return R.compose(
+      R.find((hand) => {
+        return R.not(hand.blackJack) &&
+          R.contains(hand.option, ['init', 'hit']);
+      }),
+      R.sortBy(hand => hand.handId),
+      R.values
+    )(this._hands);
+  }
+  isAllUserHandBlackJack(){
+    return R.compose(
+      R.cond([
+        [R.isEmpty, R.F],
+        [R.T, R.all(hand => hand.blackJack)],
+      ]),
+      R.values
+    )(this._hands);
+  }
+  registerOperatingHand({operating_hand}){
+    this._operating_hand = operating_hand;
+  }
+  getOperatingHand(){
+    return this._operating_hand;
+  }
+  /*
+  getOperatingHandOption(user){
+    return R.reduce(R.cond[
+      [(acc, option) => {
+        return option == 'hit' &&
+          R.not(R.contains(this._operating_hand.option,
+            ['stand', 'giveup', 'double', 'split']));
+      }, R.concat(
+      ],
+    ], [], ['hit', 'giveup', 'stand', 'double', 'split']);
+  }
+  */
 }
 
 module.exports = {

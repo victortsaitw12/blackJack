@@ -145,7 +145,7 @@ class Table{
     const hand = new Hand({hand: 999});
     hand.push(this.deck.deal());
     hand.push(this.deck.deal());
-    this.game.registerDealerHand(hand);
+    this.game.registerDealerHand({hand});
     return this.game.getDealerHand();
   }
   onSTATE_NTF_DEALING_CARD(proto){
@@ -170,22 +170,68 @@ class Table{
     }, this.game.getHands());
   }
   onSTATE_REQ_DECIDE_FORK(proto){
-
-    return {
+    let res = {
       proto: 'STATE_RSP_DECIDE_FORK',
       result: '',
     };
+    if(this.game.isDealerBlackJack()){
+      return Object.assign(res, {
+        reason: 'dealer is blackjack',
+        result: 'showdown',  
+      });
+    }
+    if(this.game.isAllUserHandBlackJack()){
+      return Object.assign(res, {
+        reason: 'user hands are blackjack',
+        result: 'showdown',
+      });
+    }
+    const operation = this.game.selectTheOperationHand();
+    if (R.compose(R.not, R.isNil)(operation)){
+      return Object.assign(res, {
+        reason: `operation hand: ${operation.handId}`,
+        result: 'user_play'
+      });
+    }
+    return Object.assign({
+      reason: 'no match all other conditions',
+      result: 'dealer_play',
+    });
   }
   onSTATE_NTF_USER_PLAY(proto){
-    return;
+    console.log(`onSTATE_NTF_USER_PLAY:${proto}`);
+    const operating_hand = this.game.selectTheOperationHand();
+    this.game.registerOperatingHand({
+      operating_hand
+    });
+    // find the user for this hand
+    const user_id = this.getUserIdBySeatId(operating_hand.seatId);
+    const player = this.players[user_id];
+    if (R.isNil(player)){
+      throw new Error(`There is not this user : ${user_id}`);
+    }
+    let packet = SDK.protocol.makeEmptyProtocol(
+      'BLJ2GCT_NTF_YOUR_TURN_TO_PLAY'
+    )
+    packet.update({
+      area: this.area,
+      table_id: this.table_id,
+      seat_id: operating_hand.seatId,
+      hand_id: operating_hand.handId,
+      operation: 
+    });
+    return this.send2User(user_id, packet);
   }
   onSTATE_NTF_PLAY_TIMEOUT(proto){
+    console.log(`onSTATE_NTF_PLAY_TIMEOUT:${proto}`);
     return;
   }
   onSTATE_NTF_DEALER_PLAY(proto){
+    console.log(`onSTATE_NTF_DEALER_PLAY:${proto}`);
     return;
   }
   onSTATE_NTF_SHOWDOWN(proto){
+    console.log(`onSTATE_NTF_SHOWDOWN:${proto}`);
     return;
   }
   onSTATE_NTF_JOIN_TABLE(proto){
