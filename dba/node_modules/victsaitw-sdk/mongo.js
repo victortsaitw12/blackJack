@@ -1,3 +1,4 @@
+'use strict'
 var MongoClient = require('mongodb').MongoClient;
 var Joi = require('joi');
 var R = require('ramda');
@@ -72,6 +73,14 @@ class Database extends EventEmitter{
         { upsert: true},
       )
     });
+  }
+  ensureIndex({db, collection, index, options}){
+    return this.connection.db(db).collection(
+      collection).ensureIndex(index, options);
+  }
+  ensureIndexes({db, collection, indexes, options}){
+    return this.connection.db(db).collection(
+      collection).ensureIndex(indexes, options);
   }
 }
 

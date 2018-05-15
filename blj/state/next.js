@@ -11,7 +11,7 @@ class Next{
   }
   changeState(stateMachine){
     console.log('changeState:', this.name);
-    return stateMachine.changeState(di.resovlve('join'));
+    return stateMachine.changeState(di.resolve('join'));
   }
   timeout(stateMachine){
     console.log('timeout:', this.name);

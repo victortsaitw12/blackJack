@@ -12,13 +12,13 @@
     "chai": "^4.1.2",
     "express": "^4.16.3",
     "ioredis": "^3.2.2",
-    "joi": "^13.2.0",
+    "joi": "^13.3.0",
     "kafka-node": "^2.6.1",
     "mocha": "^5.1.1",
-    "mongodb": "^3.0.7",
+    "mongodb": "^3.0.8",
     "no-kafka": "^3.2.9",
     "ramda": "^0.25.0",
-    "victsaitw-sdk": "^1.0.41",
+    "victsaitw-sdk": "^1.0.46",
     "websocket": "^1.0.26",
     "ws": "^5.1.1"
   }

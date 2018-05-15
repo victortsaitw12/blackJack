@@ -356,3 +356,35 @@ describe('isAllUserHandBlackJack', () => {
     expect(res).to.be.false;
   });
 });
+
+
+describe('refund', () => {
+  let game;
+  beforeEach(() => {
+    game = Game.newGame();  
+  });
+  it('one win result', () => {
+    let bets = game.betOnSeat({
+      user_id: 117,
+      seat_id: 1,
+      money: 100
+    });
+    const refunds = game.payUserWinMoney({seat_id: 1, percent: 2});
+    const result = game.getBetResult();
+    expect(result, JSON.stringify(result)).to.have.deep.members([
+      {bet_money: 100, user_id: "117", win_money: 200}
+    ]);
+  });
+  it('two win result', () => {
+    game.betOnSeat({user_id: 117, seat_id: 1, money: 100});
+    game.betOnSeat({user_id: 118, seat_id: 2, money: 200});
+    game.payUserWinMoney({seat_id: 1, percent: 2});
+    game.payUserWinMoney({seat_id: 2, percent: 2});
+    const result = game.getBetResult();
+    expect(result, JSON.stringify(result)).to.have.deep.members([
+      {bet_money: 100, user_id: "117", win_money: 200},
+      {bet_money: 200, user_id: "118", win_money: 400}
+    ]);
+  });
+});
+

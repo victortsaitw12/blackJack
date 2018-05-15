@@ -8,6 +8,7 @@ class Game{
     this._pair_bets = {};
     this._hand_owners = {};
     this._hands = {};
+    this._refunds = {};
     this._dealer_hand = null;
     this._operating_hand = null;
   }
@@ -17,6 +18,12 @@ class Game{
   }
   getHands(){
     return this._hands;
+  }
+  getHandsBySeatId({seat_id}){
+    return R.compose(
+      R.filter(hand => hand.seatId == seat_id),
+      R.values
+    )(this._hands);
   }
   getHand({hand_id}){
     return this._hands[hand_id];
@@ -60,6 +67,9 @@ class Game{
     current_bet[user_id] = current_user_bet + money;
     this._pair_bets[seat_id] = current_bet;
     return this._pair_bets;
+  }
+  getSeatBet({seat_id}){
+    return R.pathOr({}, [seat_id], this._bets);
   }
   getMoneyOnPairBySeatId({seat_id}){
     const bets = R.pathOr({}, [seat_id], this._pair_bets);
@@ -117,18 +127,98 @@ class Game{
   getOperatingHand(){
     return this._operating_hand;
   }
-  /*
-  getOperatingHandOption(user){
-    return R.reduce(R.cond[
-      [(acc, option) => {
-        return option == 'hit' &&
-          R.not(R.contains(this._operating_hand.option,
-            ['stand', 'giveup', 'double', 'split']));
-      }, R.concat(
-      ],
-    ], [], ['hit', 'giveup', 'stand', 'double', 'split']);
+  getHitOption({operating_hand, user}){
+    if (
+      R.contains(operating_hand.option, ['init', 'hit']) &&
+      !operating_hand.blackJack &&
+      !operating_hand.busted
+    ){
+      return 'hit';
+    }
+    return;
   }
-  */
+  getDoubleOption({operating_hand, user}){
+    if (
+      R.contains(operating_hand.option, ['init']) &&
+      !operating_hand.blackJack &&
+      !operating_hand.busted
+    ){
+      return 'double';
+    }
+    return;
+  }
+  getSplitOption({operating_hand, user}){
+    if (
+      R.contains(operating_hand.option, ['init', 'hit']) &&
+      !operating_hand.blackJack &&
+      !operating_hand.busted &&
+      operating_hand.isPair &&
+      0 > operating_hand.parentId
+    ){
+      return 'split';
+    }
+    return;
+  }
+  getStandOption({operating_hand, user}){
+    if (
+      R.contains(operating_hand.option, ['init', 'hit']) &&
+      !operating_hand.blackJack &&
+      !operating_hand.busted
+    ){
+      return 'stand';
+    }
+    return;
+  }
+  getGiveupOption({operating_hand, user}){
+    if (
+      R.contains(operating_hand.option, ['init']) &&
+      !operating_hand.blackJack &&
+      !operating_hand.busted &&
+      0 > operating_hand.parentId
+    ){
+      return 'stand';
+    }
+    return;
+  }
+  getOperatingHandOption({operating_hand, user}){
+    let acc = [];
+    acc.push(this.getHitOption({operating_hand, user}));
+    acc.push(this.getDoubleOption({operating_hand, user}));
+    acc.push(this.getSplitOption({operating_hand, user}));
+    acc.push(this.getStandOption({operating_hand, user}));
+    acc.push(this.getGiveupOption({operating_hand, user}));
+    return R.takeWhile(R.complement(R.isNil), acc);
+  }
+  payUserWinMoney({seat_id, percent}){
+    let bets = R.pathOr({}, [seat_id], this._bets);
+    let refunds = {};
+    R.mapObjIndexed((money, user_id) => {
+      let refund = R.multiply(money, percent);
+      refunds[user_id] = refund;
+    }, bets);
+    this._refunds[seat_id] = refunds;
+    return this._refunds;
+  }
+  getUserWinMoney({seat_id, user_id}){
+    return R.pathOr(0, [seat_id, user_id], this._refunds);
+  }
+  getBetResult(){
+    return R.reduce((acc, seat_id) => {
+      const bets = this.getSeatBet({seat_id});
+      if (R.isEmpty(bets)){
+        return acc;
+      }
+      let user_result = R.mapObjIndexed((bet, user_id) => {
+        let refund = this.getUserWinMoney({seat_id, user_id});
+        return {
+          user_id: user_id,
+          win_money: refund,
+          bet_money: bet,
+        };
+      }, bets);
+      return R.concat(acc, R.values(user_result));
+    }, [], R.range(1, 6));
+  }
 }
 
 module.exports = {

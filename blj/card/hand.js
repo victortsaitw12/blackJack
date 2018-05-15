@@ -10,6 +10,8 @@ class Hand{
     this._hard_point = 0;
     this._parent_id = -1;
     this._option = 'init';
+    this._timeout = false;
+    this._result = 'init';
     this.updatePoint();
   }
   updatePoint(){
@@ -50,6 +52,9 @@ class Hand{
     return R.equals(2, this._cards.length) &&
       R.equals(21, this._soft_point);
   }
+  get busted(){
+    return this.softPoint > 21;
+  }
   get isPair(){
     return 2 == this._cards.length && 
           this._cards[0].figure == this._cards[1].figure;
@@ -68,6 +73,13 @@ class Hand{
     this._option = user_option;
     return this._option;
   }
+  get timeout(){
+    return this._timeout;
+  }
+  set timeout(t){
+    this._timeout = t;
+    return this._timeout;
+  }
   push(card){
     this._cards.push(card);
     this.updatePoint();
@@ -78,6 +90,28 @@ class Hand{
   }
   get seatId(){
     return Math.floor(this.handId / 100);
+  }
+  set result(r){
+    this._result = r;
+    return this._result;
+  }
+  get result(){
+    return this._result;
+  }
+  fight(other_hand){
+    if (other_hand.blackJack){
+      return -1;
+    }
+    if (this.blackJack){
+      return 1;
+    }
+    if(this.busted){
+      return -1;
+    }
+    if (other_hand.busted){
+      return 1;
+    }
+    return this.softPoint - other_hand.softPoint;
   }
   toObject(){
     return Object.assign({
@@ -92,6 +126,7 @@ class Hand{
       hard_point: this.hardPoint,
       parent_id: this.parentId,
       option: this.option,
+      result: this.result,
     });
   }
   toString(){

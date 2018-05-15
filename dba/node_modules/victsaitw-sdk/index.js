@@ -1,6 +1,7 @@
 'use strict'
 const mongo = require('./mongo.js');
 const kafka = require('./kafka.js');
+const redis = require('./redis.js');
 const Protocol = require('./protocol');
 const Timeout = require('./timeout');
 const EventEmitter = require('events').EventEmitter;
@@ -14,6 +15,7 @@ class SDK extends EventEmitter{
     this.timeout = this.newTimeoutRegister();
     this.mongo = mongo;
     this.kafka = kafka;
+    this.redis = redis;
     this.mongo.on('stateChange', this.stateChange.bind(this));
     this.kafka.on('stateChange', this.stateChange.bind(this));
     this.kafka.on('kafkaMessage', this.kafkaMessage.bind(this));
@@ -24,7 +26,7 @@ class SDK extends EventEmitter{
   get sequence(){
     return new Date().valueOf() + '' + process.pid;
   }
-  start({schemas, mongo_url, kafka_url}){
+  start({schemas, mongo_url, kafka_url, redis_url}){
     this.mongo_url = mongo_url;
     this.kafka_url = kafka_url;
     schemas = schemas ? schemas : {};
@@ -40,6 +42,11 @@ class SDK extends EventEmitter{
         url: kafka_url,
         self_queue: process.env.BIND_QUEUE,
         group_queue: process.env.BIND_POOL,
+      });
+    }
+    if (redis_url){
+      this.redis.start({
+        url: 'redis://' + redis_url
       });
     }
     this.protocol = new Protocol(schemas); 
@@ -83,8 +90,10 @@ class SDK extends EventEmitter{
   stateChange(state){
     console.log('kafka state:', this.kafka.state);
     console.log('mong state:', this.mongo.state);
+    console.log('redis state:', this.redis.state);
     if((!this.kafka_url || 'ready' == this.kafka.state) &&
-       (!this.mongo_url || 'ready' == this.mongo.state)){
+       (!this.mongo_url || 'ready' == this.mongo.state) &&
+       (!this.redis_url || 'ready' == this.redis.state)){
       this.state = 'ready';
       this.emit('stateChange', this.state);
     }

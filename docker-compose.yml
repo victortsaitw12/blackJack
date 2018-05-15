@@ -146,7 +146,8 @@ services:
 
   dba:
     build: ./dba
-    command: nodemon index.js
+   # command: nodemon index.js
+    command: grunt
     volumes:
       - ./dba:/app
     depends_on:

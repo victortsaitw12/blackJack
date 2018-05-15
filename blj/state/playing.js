@@ -7,7 +7,7 @@ class Playing{
   }
   onData(data){
     data.proto.state = this.name;
-    return data.stateMachin.table.onData(data.proto);
+    return data.stateMachine.table.onData(data.proto);
   }
   changeState(stateMachine){
     console.log('changeState:', this.name);

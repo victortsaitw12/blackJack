@@ -15,7 +15,7 @@ class DealerPlay{
       proto: 'STATE_NTF_DEALER_PLAY',
       state: this.name,
     });
-    return stateMaching.setTimeout(5);
+    return stateMachine.setTimeout(5);
   }
   timeout(stateMachine){
     console.log('timeout:', this.name);

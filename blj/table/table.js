@@ -193,9 +193,16 @@ class Table{
         result: 'user_play'
       });
     }
-    return Object.assign({
+    const dealer_hand = this.game.getDealerHand();
+    if (dealer_hand.softPoint < 17){
+      return Object.assign({
+        reason: 'dealer softPoint is less than 17',
+        result: 'dealer_play',
+      });
+    }
+    return Object.assign(res, {
       reason: 'no match all other conditions',
-      result: 'dealer_play',
+      result: 'showdown',
     });
   }
   onSTATE_NTF_USER_PLAY(proto){
@@ -206,8 +213,8 @@ class Table{
     });
     // find the user for this hand
     const user_id = this.getUserIdBySeatId(operating_hand.seatId);
-    const player = this.players[user_id];
-    if (R.isNil(player)){
+    const user = this.players[user_id];
+    if (R.isNil(user)){
       throw new Error(`There is not this user : ${user_id}`);
     }
     let packet = SDK.protocol.makeEmptyProtocol(
@@ -218,21 +225,144 @@ class Table{
       table_id: this.table_id,
       seat_id: operating_hand.seatId,
       hand_id: operating_hand.handId,
-      operation: 
+      operation: this.game.getOperatingHandOption({
+        operating_hand, user
+      }),
     });
     return this.send2User(user_id, packet);
   }
   onSTATE_NTF_PLAY_TIMEOUT(proto){
     console.log(`onSTATE_NTF_PLAY_TIMEOUT:${proto}`);
+    const operating_hand = this.game.getOperatingHand();
+    if(R.isNil(operating_hand)){
+      throw new Error(`operating is undefinded`);
+    }
+    if(R.not(R.contains(operating_hand.option, ['hit', 'init']))){
+      throw new Error(`operating hand is already decided
+      ${operating_hand.option}`);
+    }
+    operating_hand.option = 'stand';
+    operating_hand.timeout = true;
+    this.game.registerHand({
+      hand_id: operating_hand.handId,
+      hand: operating_hand
+    });
+    let packet = SDK.protocol.makeEmptyProtocol(
+      'BLJ2GCT_NTF_OTHER_PLAY'
+    )
+    let user_id = this.getUserIdBySeatId(operating_hand.seatId);
+    packet.update({
+      area: this.area,
+      table_id: this.table_id,
+      user_id: user_id,
+      seat_id: operating_hand.seatId,
+      hand_id: operating_hand.handId,
+      option: operating_hand.option,
+    });
+    return this.send2User(user_id, packet);
+  }
+  dealingDealerCard(hand){
+    if (17 > hand.softPoint){
+      hand.push(this.deck.deal());
+      return this.dealingDealerCard(hand);
+    }
     return;
   }
   onSTATE_NTF_DEALER_PLAY(proto){
-    console.log(`onSTATE_NTF_DEALER_PLAY:${proto}`);
-    return;
+    const dealer_hand = this.game.getDealerHand();
+    this.dealingDealerCard(dealer_hand);
+    let packet = SDK.protocol.makeEmptyProtocol(
+      'BLJ2GCT_NTF_DEALER_CARDS'
+    )
+    packet.update({
+      area: this.area,
+      table_id: this.table_id,
+      hand: this.game.getDealerHand().toObject(),
+    });
+    return this.broadcast(packet);
+  }
+  processWinHand(hand){
+    hand.result = 'win';
+    let percent = 2;
+    if (hand.blackJack){
+      percent = 2.5
+    }
+    this.game.payUserWinMoney({seat_id: hand.seatId, percent: percent});
+    return hand.toObject();
+  }
+  processLoseHand(hand){
+    hand.result = 'lose';
+    this.game.payUserWinMoney({seat_id: hand.seatId, percent: 0});
+    return hand.toObject();
+  }
+  processTieHand(hand){
+    hand.result = 'tie';
+    this.game.payUserWinMoney({seat_id: hand.seatId, percent: 1});
+    return hand.toObject();
+  }
+  preparePlayerScorePL(){
+    return R.map(res => {
+      const player = this.players[res.user_id];
+      player.addMoneyInTable(res.win_money);
+      return {
+        proto: 'PLAYER_SCORE_PL',
+        user_id: player.userId,
+        money_in_table: player.moneyInTable,
+        seat_id: player.seatId,
+        win_money: res.win_money,
+        hands: R.map(hand => hand.toObject(),
+          this.game.getHandsBySeatId({seat_id: player.seatId})
+        ),
+      }
+    }, this.game.getBetResult());
   }
   onSTATE_NTF_SHOWDOWN(proto){
     console.log(`onSTATE_NTF_SHOWDOWN:${proto}`);
-    return;
+    const dealer = this.game.getDealerHand();
+    const hands = R.map(hand => {
+      const result = hand.fight(dealer);
+      if (result > 0) {
+        return this.processWinHand(hand);
+      }
+      if (result < 0) {
+        return this.processLoseHand(hand);
+      }
+      return this.processTieHand(hand);
+    }, R.values(this.game.getHands()));
+    let packet = SDK.protocol.makeEmptyProtocol(
+      'BLJ2DBA_REQ_WRITE_SCORE'
+    )
+    packet.update({
+      seq: SDK.sequence,
+      area: this.area,
+      table_id: this.table_id,
+      dealer_hand: this.game.getDealerHand().toObject(),
+      player_scores: this.preparePlayerScorePL(),
+    });
+    packet.toTopic = 'dbaPool';
+    packet.timeout = 10;
+    SDK.send2XYZ(packet).then(data => {
+      this.onDBA2BLJ_RSP_WRITE_SCORE(data);
+    }).catch(err => {
+      console.log(err);
+    });
+  }
+  onDBA2BLJ_RSP_WRITE_SCORE(data){
+    let packet = SDK.protocol.makeEmptyProtocol(
+      'BLJ2GCT_NTF_SHOWDOWN'
+    )
+    const hands = R.compose(R.map(h => h.toObject()), R.values)(
+      this.game.getHands()
+    );
+    const dealer_hand = this.game.getDealerHand();
+    packet.update({
+      area: this.area,
+      table_id: this.table_id,
+      hands: hands,
+      dealer_hand: dealer_hand.toObject(),
+      refunds: req.player_scores,
+    });
+    return this.broadcast(packet);
   }
   onSTATE_NTF_JOIN_TABLE(proto){
     let player = new Player({
@@ -351,6 +481,7 @@ class Table{
       pair_bets: protocol.pair_bets,
     }
   }
+
 }
 
 module.exports = Table;

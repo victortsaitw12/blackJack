@@ -21,6 +21,7 @@ class BLJ{
     SDK.start({
       schemas: Schemas,
       kafka_url: 'kafka:9092',
+      redis_url: 'redis:6379'
     });
   }
   findFunc(name){
@@ -363,4 +364,5 @@ class BLJ{
     return SDK.send2XYZ(response);
   }
 };
+
 module.exports = new BLJ();
