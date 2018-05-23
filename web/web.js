@@ -9,6 +9,7 @@ let user = {
   nickname: 'victor',
   buy_in: 5000,
 };
+app.use('/static', express.static(__dirname + '/page'));
 app.get('/', (req, res) => {
   res.writeHead(200, {'Content-Type': 'text/html'});
   res.end(`<h1>${process.env.MESSAGE} and port ${process.env.PORT}</h1>`);
@@ -88,7 +89,7 @@ app.get('/signUp', (req, res) => {
   });
 });
 app.get('/ws', (req, res) => {
-  res.sendFile( __dirname + '/page/webclient.html');  
+  res.sendFile(__dirname + '/page/webclient.html');  
 });
 console.log(`web listen on ${process.env.PORT}`);
 app.listen(process.env.PORT);

@@ -93,7 +93,7 @@ services:
 
   web1:
     build: ./web
-    command: nodemon index.js
+    command: nodemon server.js
     volumes:
       - ./web:/app
     depends_on:
@@ -112,7 +112,7 @@ services:
 
   web2:
     build: ./web
-    command: nodemon index.js
+    command: nodemon server.js
     volumes:
       - ./web:/app
     depends_on:
