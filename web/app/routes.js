@@ -1,8 +1,10 @@
 // app/routes.js
-
+var jwt = require('jsonwebtoken');
 module.exports = function(app, passport) {
   app.get('/', (req, res) => {
-    res.render('index.ejs'); // load the index.ejs file  
+    res.render('index.ejs', {
+      app_id: '843930439103568'
+    }); // load the index.ejs file  
   });
   app.get('/login', (req, res) => {
     res.render('login.ejs', {
@@ -36,15 +38,25 @@ module.exports = function(app, passport) {
     });
   });
   // facebook routes
-  app.get('/auth/facebook', passport.authenticate('facebook', {
-    scope: ['public_profile', 'email']
-  }));
+  //app.get('/auth/facebook', passport.authenticate('facebook', {
+  //  scope: ['public_profile', 'email']
+  //}));
   // handle the callback after facebook has authenticated the user
-  app.get('/auth/facebook/callback',
-    passport.authenticate('facebook', {
-      successRedirect: '/profile',
-      failureRedirect: '/'
-  }));
+  //app.get('/auth/facebook/callback',
+  //  passport.authenticate('facebook', {
+  //    successRedirect: '/profile',
+  //    failureRedirect: '/'
+  //}));
+  app.get('/auth/facebook/token',
+    passport.authenticate('facebook-token'), (req, res) => {
+      console.log(req.user);
+      var token = jwt.sign({
+        user_id: req.user._id
+      }, 'jwtsecretekey', {
+        expiresIn: 60  
+      });
+      res.end(token);
+  });
   // logout
   app.get('/logout', (req, res) => {
     req.session.destroy();
@@ -85,10 +97,21 @@ module.exports = function(app, passport) {
       res.redirect('/profile');  
     });
   });
-  app.get('/webClient', isLoggedIn, (req, res) => {
-    res.render('webclient.ejs', {
-      user: req.user
-    });
+  //app.get('/webClient', isLoggedIn, (req, res) => {
+  //  console.log('==================');
+  //  console.log(req.query.token);
+  //  res.render('webclient.ejs', {
+  //    user: req.user
+  //  });
+  //});
+  app.get('/gamePanel', passport.authenticate('jwt', {
+    session: false,
+  }), (req, res) => {
+    if(req.user){
+      res.render('webclient.ejs', {
+        user: req.user
+      });
+    }
   });
 };
 

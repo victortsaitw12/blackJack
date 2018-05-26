@@ -2,6 +2,9 @@
 var LocalStrategy = require('passport-local').Strategy;
 var User = require('../app/models/user');
 var FacebookStrategy = require('passport-facebook').Strategy;
+var FacebookTokenStrategy = require('passport-facebook-token');
+var JwtStrategy = require('passport-jwt').Strategy;
+var ExtractJwt = require('passport-jwt').ExtractJwt;
 var configAuth = require('./auth');
 
 module.exports = function(passport){
@@ -72,6 +75,7 @@ module.exports = function(passport){
     });
   }));
   // facebook
+  /*
   passport.use(new FacebookStrategy({
     clientID: configAuth.facebookAuth.clientID,
     clientSecret: configAuth.facebookAuth.clientSecret,
@@ -136,6 +140,65 @@ module.exports = function(passport){
           return done(null, user);
         });
       }
+    });
+  }));
+  */
+  passport.use('facebook-token', new FacebookTokenStrategy({
+    clientID: configAuth.facebookAuth.clientID,
+    clientSecret: configAuth.facebookAuth.clientSecret,
+  }, (token, refreshToken, profile, done) => {
+
+    process.nextTick(function(){
+      User.findOne({ 'facebook.id': profile.id }, (err, user) => {
+        if (err) return done(err);
+        if (user) {
+          if (!user.facebook.token) {
+            user.facebook.token = token;
+            user.facebook.name = profile.name.givenName + ' '+
+              profile.name.familyName;
+            user.facebook.email = profile.emails[0].value;
+            user.updated_dt = Date.now();
+            user.save(err => {
+              if (err) throw err;
+              return done(null, user);
+            });
+          }
+          return done(null, user);
+        } else {
+          var newUser = new User();
+      
+          newUser.facebook.id = profile.id;
+          newUser.facebook.token = token;
+          newUser.facebook.name = profile.name.givenName + ' ' +
+          profile.name.familyName;
+          newUser.facebook.email = profile.emails[0].value;
+          newUser.nickname = newUser.facebook.name;
+          newUser.money = 1000;
+          newUser.exp = 0;
+          newUser.level = 0;
+          newUser.created_dt = Date.now();
+          newUser.updated_dt = Date.now();
+          newUser.save(err => {
+          if (err) throw err;
+            return done(null, newUser);
+          });
+        }
+      })
+    });
+  }));
+  passport.use('jwt', new JwtStrategy({
+    // jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+    jwtFromRequest: ExtractJwt.fromUrlQueryParameter('token'),
+    secretOrKey: 'jwtsecretekey',
+  }, (payload, done) => {
+    process.nextTick(function(){
+      User.findById(payload.user_id, (err, user) => {
+        if (err) return done(err);
+        if (user) {
+          return done(null, user);
+        }
+        return done(null, false);
+      })
     });
   }));
 };
