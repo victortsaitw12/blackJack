@@ -17,8 +17,8 @@
     "kafka-node": "^2.6.1",
     "load-grunt-tasks": "^4.0.0",
     "mongodb": "^3.0.8",
-    "no-kafka": "^3.2.9",
+    "no-kafka": "^3.2.10",
     "ramda": "^0.25.0",
-    "victsaitw-sdk": "^1.0.46"
+    "victsaitw-sdk": "^1.0.47"
   }
 }

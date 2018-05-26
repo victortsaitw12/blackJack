@@ -71,7 +71,7 @@ class BLJPlugin{
         db: 'test',
         collection: 'MemberDB',
         query: {
-          user_id: user_id,
+          _id: SDK.mongo.toObjectId(user_id),
         }
       });
     }).then((data) => {
@@ -90,7 +90,7 @@ class BLJPlugin{
         db: 'test',
         collection: 'MemberDB',
         query: {
-          user_id: user_id,
+          _id: SDK.mongo.toObjectId(user_id),
         },
         content: {
           '$set': { money: (money_in_pocket - buy_in)},  
@@ -150,10 +150,10 @@ class BLJPlugin{
       db: 'test',
       collection: 'MemberDB',
       query: {
-        user_id: protocol.find('user_id')
+        _id: SDK.mongo.toObjectId(protocol.find('user_id'))
       }
     }).then(data => {
-      console.log(`MongoDB findOne:${data}`);
+      console.log(`MongoDB findOne:${JSON.stringify(data)}`);
       // query moneyInTable
       return SDK.mongo.findOne({
         db: 'test',
@@ -166,7 +166,7 @@ class BLJPlugin{
       }).then(inData => {
         return packet.update({
           money_in_table: R.pathOr(0, ['money'], inData),
-          money_in_pocket: R.pathOr(0, ['money_in_pocket'], data),
+          money_in_pocket: R.pathOr(0, ['money'], data),
           nickname: R.pathOr('', 'nickname', data),
           result: 'SUCCESS'
         })

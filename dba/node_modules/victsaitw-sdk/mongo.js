@@ -1,5 +1,6 @@
 'use strict'
 var MongoClient = require('mongodb').MongoClient;
+var ObjectID = require('mongodb').ObjectID;
 var Joi = require('joi');
 var R = require('ramda');
 var EventEmitter = require('events').EventEmitter;
@@ -81,6 +82,9 @@ class Database extends EventEmitter{
   ensureIndexes({db, collection, indexes, options}){
     return this.connection.db(db).collection(
       collection).ensureIndex(indexes, options);
+  }
+  toObjectId(id){
+    return ObjectID(id);
   }
 }
 

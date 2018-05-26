@@ -23,18 +23,28 @@ module.exports = function(passport){
     passReqToCallback: true
   }, (req, email, password, done) => {
     process.nextTick(() => {
-      User.findOne({ 'local.email': email }, (err, user) => {
+      User.findOne({ 'local.email': email }, (err, existingUser) => {
         if (err) return done(err);
-        if (user) {
-          return done(null, false,
-            req.flash('signupMessage', 'That email has been taken')
+
+        // check to see if there's a already a user with that email
+        if (existingUser)
+          return done(null, false, 
+            req.flash('signupMessage', 'That email is already taken.')
           );
+        // If we're logged in, we're connecting a new local account.
+        if (req.user){
+          var user = req.user;
+          user.local.email = email;
+          user.local.password = user.generateHash(password);
+          user.save(err => {
+            if (err) throw err;
+            return done(null, user);
+          });
         } else {
           var newUser = new User();
           newUser.local.email = email;
           newUser.local.password = newUser.generateHash(password);
-          // save the user
-          newUser.save((err) => {
+          newUser.save(err => {
             if (err) throw err;
             return done(null, newUser);
           });
@@ -67,33 +77,65 @@ module.exports = function(passport){
     clientSecret: configAuth.facebookAuth.clientSecret,
     callbackURL: configAuth.facebookAuth.callbackURL,
     profileFields: configAuth.facebookAuth.profileFields,
+    passReqToCallback: true
   // facebook will send back the token and profile
-  }, (token, refreshToken, profile, done) => { 
+  }, (req, token, refreshToken, profile, done) => { 
 
     console.log(profile);
     console.log(token);
     console.log(refreshToken);
     // asynchronous
     process.nextTick(() => {
-      // find the user in database based on thier facebook id
-      User.findOne({'facebook.id': profile.id}, (err, user) => {
-        if (err) return done(err);
-        if (user) {
+
+      if (!req.user) {
+        User.findOne({ 'facebook.id': profile.id }, (err, user) => {
+          if (err) return done(err);
+          if (user) {
+            if (!user.facebook.token) {
+              user.facebook.token = token;
+              user.facebook.name = profile.name.givenName + ' '+
+                profile.name.familyName;
+              user.facebook.email = profile.emails[0].value;
+              user.updated_dt = Date.now();
+              user.save(err => {
+                if (err) throw err;
+                return done(null, user);
+              });
+            }
+            return done(null, user);
+          } else {
+            var newUser = new User();
+      
+            newUser.facebook.id = profile.id;
+            newUser.facebook.token = token;
+            newUser.facebook.name = profile.name.givenName + ' ' +
+              profile.name.familyName;
+            newUser.facebook.email = profile.emails[0].value;
+            newUser.nickname = newUser.facebook.name;
+            newUser.money = 1000;
+            newUser.exp = 0;
+            newUser.level = 0;
+            newUser.created_dt = Date.now();
+            newUser.updated_dt = Date.now();
+            newUser.save(err => {
+              if (err) throw err;
+              return done(null, newUser);
+            });
+          }
+        });
+      } else {
+        var user = req.user; // pull the user out of the session
+        user.facebook.id = profile.id;
+        user.facebook.token = token;
+        user.facebook.name = profile.name.givenName + ' ' +
+          profile.name.familyName;
+        user.facebook.email = profile.emails[0].value;
+        user.updated_dt = Date.now();
+        user.save(err => {
+          if (err) throw err;
           return done(null, user);
-        } else {
-          // if there is no user found with that facebook id, create them
-          var newUser = new User();
-          newUser.facebook.id = profile.id;
-          newUser.facebook.token = token;
-          newUser.facebook.name = profile.name.givenName + ' ' +
-            profile.name.familyName;
-          newUser.facebook.email = profile.emails[0].value;
-          newUser.save(err => {
-            if (err) throw err;
-            return done(null, newUser);
-          });
-        }
-      });
+        });
+      }
     });
   }));
 };

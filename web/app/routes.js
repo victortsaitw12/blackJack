@@ -47,8 +47,48 @@ module.exports = function(app, passport) {
   }));
   // logout
   app.get('/logout', (req, res) => {
+    req.session.destroy();
     req.logout();
     res.redirect('/');
+  });
+  // Authorize
+  app.get('/connect/local', (req, res) => {
+    res.render('connect-local.ejs', {
+      message: req.flash('loginMessage')
+    })
+  });
+  app.post('/connect/local', passport.authenticate('local-signup', {
+    successRedirect: '/profile',
+    failureRedirect: '/connect/local',
+    failureFlash: true
+  }));
+  app.get('/connect/facebook', passport.authorize('facebook', {
+    scope: ['public_profile', 'email']
+  }));
+  app.get('/connect/facebook/callback',
+    passport.authorize('facebook', {
+      successRedirect: '/profile',
+      failureRedirect: '/'
+    }));
+  app.get('/unlink/local', (req, res) => {
+    var user = req.user;
+    user.local.email = undefined;
+    user.local.password = undefined;
+    user.save(err => {
+      res.redirect('/profile');  
+    });
+  });
+  app.get('/unlink/facebook', (req, res) => {
+    var user = req.user;
+    user.facebook.token = undefined;
+    user.save(err => {
+      res.redirect('/profile');  
+    });
+  });
+  app.get('/webClient', isLoggedIn, (req, res) => {
+    res.render('webclient.ejs', {
+      user: req.user
+    });
   });
 };
 

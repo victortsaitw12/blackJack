@@ -1,0 +1,166 @@
+<!DOCTYPE HTML>
+
+<html>
+   <head>
+      <script type = "text/javascript">
+         let ws = null;
+         let client_id = null;
+         let table_id = -1;
+         let seat_id = -1;
+         let area = '';
+         let hand_id = -1;
+         let routines = {};
+         routines.onGWY2GCT_RSP_CLIENT_ID = (protocol) => {
+           console.log('onGWY2GCT_RSP_CLIENT_ID:' + protocol.client_id);
+           client_id = protocol.client_id;
+           let bind_protocol = JSON.stringify({
+             proto: 'GCT2GWY_REQ_BIND_USER',
+             seq: 12345,
+             user_id: '<%= user._id %>',
+             client_id: client_id,
+           })
+           ws.send(bind_protocol);
+           addText("Message is sent..." + bind_protocol);
+         }
+         routines.onBLJ2GCT_NTF_START_HAND = (protocol) => {
+           hand_id = protocol.hand_id;
+           setTimeout(bet, 2);
+         }
+         routines.onBLJ2GCT_RSP_SIT_DOWN = (protocol) => {
+           seat_id = protocol.seat_id;  
+         }
+         function addText(text) {
+           let old_text = document.getElementById("log").value;
+           document.getElementById("log").value = 
+           '->' + text + '\n' + old_text;
+         }
+         routines.onGWY2GCT_RSP_GAME_PLAY = (protocol) => {
+           try {
+             let fn = routines['on' + protocol.payload.proto];
+             fn(protocol.payload);
+           } catch(err){
+             addText(err.message);
+             addText('on' + protocol.proto);
+           }
+         }
+         routines.onGWY2GCT_NTF_GAME_PLAY = (protocol) => {
+           try {
+             let fn = routines['on' + protocol.payload.proto];
+             fn(protocol.payload);
+           } catch(err){
+             addText(err.message);
+             addText('on' + protocol.proto);
+           }
+         }
+         function WebSocketTest() {
+            if ("WebSocket" in window) {
+               addText("WebSocket is supported by your Browser!");
+               // Let us open a web socket
+               ws = new WebSocket("ws://localhost:9080/ws");
+               ws.onopen = function() {
+                 // Web Socket is connected, send data using send()
+                 return;
+               };
+               ws.onmessage = function (evt) { 
+                 var received_msg = evt.data;
+                 let protocol = JSON.parse(evt.data);
+                 try {
+                   let fn = routines['on' + protocol.proto];
+                   fn(protocol);
+                   addText(received_msg);
+                 } catch(err) {
+                   addText(err.message);
+                   addText('on' + protocol.proto);
+                 }
+               };
+               ws.onclose = function() { 
+                 // websocket is closed.
+                 addText("Connection is closed..."); 
+               };
+           } else {
+               // The browser doesn't support WebSocket
+               addText("WebSocket NOT supported by your Browser!");
+            }
+         }
+         function send(payload){
+           payload.seq = 123;
+           let protocol = JSON.stringify({
+             proto: 'GCT2GWY_REQ_GAME_PLAY',
+             client_id: client_id,
+             to_topic: 'blj',
+             seq: 123,
+             payload: payload,
+           });
+           ws.send(protocol);
+           addText("Message is sent..." + protocol);
+         }
+         function send2DBA(payload){
+           payload.seq = 456;
+           let protocol = JSON.stringify({
+             proto: 'GCT2GWY_REQ_GAME_PLAY',
+             client_id: client_id,
+             to_topic: 'dbaPool',
+             seq: 456,
+             payload: payload,
+           });
+           ws.send(protocol);
+           addText("Message is sent..." + protocol);
+         }
+         function joinTable() {
+           send({
+             seq: 123,
+             proto: 'GCT2BLJ_REQ_JOIN_TABLE',
+             user_id: '<%= user._id %>',
+             area: 'coin_100',
+           })
+         }
+         function buyIn(){
+           send({
+             seq: 123,
+             proto: 'GCT2BLJ_REQ_BUY_IN',
+             area: 'coin_100',
+             table_id: 1,
+             user_id: '<%= user._id %>',
+             buy_in: 100
+           })
+         }
+         function sitDown(){
+           send({
+             seq: 123,
+             proto: 'GCT2BLJ_REQ_SIT_DOWN',
+             area: 'coin_100',
+             table_id: 1,
+             user_id: '<%= user._id %>',
+             seat_id: -1
+           });
+         }
+         function bet(){
+           send({
+             proto: 'GCT2BLJ_REQ_BET',
+             seq: 789,
+             area: 'coin_100',
+             table_id: 1,
+             user_id: '<%= user._id %>',
+             bets: {seat_id: seat_id, bet: 1000},
+             pair_bets: {}
+           });
+         }
+      </script>
+   </head>
+   
+   <body>
+      <div id = "sse">
+         <a href = "javascript:WebSocketTest()">Run WebSocket</a>
+         <hr>
+         <a href = "javascript:joinTable()">Join Table</a>
+         <hr>
+         <a href = "javascript:buyIn()">Buy In</a>
+         <hr>
+         <a href = "javascript:sitDown()">Sit Down</a>
+         <hr>
+      </div>
+      <div>
+        <textarea id="log" rows="20" cols="100" readonly></textarea>
+      </div>
+   </body>
+</html>

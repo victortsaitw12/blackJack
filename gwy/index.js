@@ -1,6 +1,5 @@
 'use strict'
 const express = require('express');
-// const ws = require('./websocket');
 const gwy = require('./gwy');
 const http = require('http');
 const app = express();
@@ -13,4 +12,3 @@ app.get('/', (req, res) => {
   res.send('hello by GWY');  
 });
 gwy.start(server);
-// ws.start(server);
