@@ -4,8 +4,17 @@ var User = require('../app/models/user');
 var FacebookStrategy = require('passport-facebook').Strategy;
 var FacebookTokenStrategy = require('passport-facebook-token');
 var JwtStrategy = require('passport-jwt').Strategy;
+var jwt = require('jsonwebtoken');
 var ExtractJwt = require('passport-jwt').ExtractJwt;
 var configAuth = require('./auth');
+
+function makeJWT(user_id){
+  return jwt.sign({
+    user_id: user_id
+  }, 'jwtsecretekey', {
+    expiresIn: 60  
+  });
+}
 
 module.exports = function(passport){
   // used to serialize the user for the session
@@ -147,7 +156,6 @@ module.exports = function(passport){
     clientID: configAuth.facebookAuth.clientID,
     clientSecret: configAuth.facebookAuth.clientSecret,
   }, (token, refreshToken, profile, done) => {
-
     process.nextTick(function(){
       User.findOne({ 'facebook.id': profile.id }, (err, user) => {
         if (err) return done(err);
@@ -160,13 +168,20 @@ module.exports = function(passport){
             user.updated_dt = Date.now();
             user.save(err => {
               if (err) throw err;
-              return done(null, user);
+              return done(null,
+                Object.assign(user, {
+                  jwt_token: makeJWT(user._id)
+                })
+              );
             });
           }
-          return done(null, user);
+          return done(null, 
+            Object.assign(user, {
+              jwt_token: makeJWT(user._id)
+            })
+          );
         } else {
           var newUser = new User();
-      
           newUser.facebook.id = profile.id;
           newUser.facebook.token = token;
           newUser.facebook.name = profile.name.givenName + ' ' +
@@ -180,7 +195,11 @@ module.exports = function(passport){
           newUser.updated_dt = Date.now();
           newUser.save(err => {
           if (err) throw err;
-            return done(null, newUser);
+            return done(null, 
+              Object.assign(user, {
+                jwt_token: makeJWT(newUser._id)
+              })
+            );
           });
         }
       })
@@ -189,7 +208,7 @@ module.exports = function(passport){
   passport.use('jwt', new JwtStrategy({
     // jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
     jwtFromRequest: ExtractJwt.fromUrlQueryParameter('token'),
-    secretOrKey: 'jwtsecretekey',
+    secretOrKey: configAuth.jwt.key,
   }, (payload, done) => {
     process.nextTick(function(){
       User.findById(payload.user_id, (err, user) => {

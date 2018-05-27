@@ -1,5 +1,4 @@
 // app/routes.js
-var jwt = require('jsonwebtoken');
 module.exports = function(app, passport) {
   app.get('/', (req, res) => {
     res.render('index.ejs', {
@@ -48,14 +47,16 @@ module.exports = function(app, passport) {
   //    failureRedirect: '/'
   //}));
   app.get('/auth/facebook/token',
-    passport.authenticate('facebook-token'), (req, res) => {
-      console.log(req.user);
-      var token = jwt.sign({
-        user_id: req.user._id
-      }, 'jwtsecretekey', {
-        expiresIn: 60  
-      });
-      res.end(token);
+    passport.authenticate('facebook-token', {
+      session: false  
+    }), (req, res) => {
+      console.log(req.user.jwt_token);
+      //var token = jwt.sign({
+      //  user_id: req.user._id
+      //}, 'jwtsecretekey', {
+      //  expiresIn: 60  
+      //});
+      res.end(req.user.jwt_token);
   });
   // logout
   app.get('/logout', (req, res) => {
