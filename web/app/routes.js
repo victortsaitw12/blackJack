@@ -109,6 +109,7 @@ module.exports = function(app, passport) {
   }), (req, res) => {
     if(req.user){
       res.render('webclient.ejs', {
+        token: req.query.token,
         user: req.user
       });
     }

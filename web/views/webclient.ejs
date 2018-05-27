@@ -56,7 +56,9 @@
             if ("WebSocket" in window) {
                addText("WebSocket is supported by your Browser!");
                // Let us open a web socket
-               ws = new WebSocket("ws://localhost:9080/ws");
+               ws = new WebSocket("ws://localhost:9080/ws?token=" +
+                 '<%= token %>'
+               );
                ws.onopen = function() {
                  // Web Socket is connected, send data using send()
                  return;

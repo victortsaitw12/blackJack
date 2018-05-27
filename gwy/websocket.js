@@ -3,6 +3,8 @@ const WebSocketServer = require('ws').Server;
 const EventEmitter = require('events').EventEmitter;
 const SDK = require('victsaitw-sdk');
 const R = require('ramda');
+const querystring = require('querystring');
+const jwt = require('jsonwebtoken');
 class WS extends EventEmitter{
   constructor(){
     super();
@@ -20,7 +22,23 @@ class WS extends EventEmitter{
   start(server){
     console.log(`webSocket start`);
     this.wsServer = new WebSocketServer({
-      server
+      server,
+      verifyClient: (info, cb) => {
+        const query = R.compose(
+          querystring.parse,
+          R.nth(1),
+          R.split('?')
+        )(info.req.url);
+        if (!query.token){
+          return cb(false, 401, 'Unauthorized');
+        }
+        jwt.verify(query.token, 'jwtsecretekey', (err, decoded) => {
+          console.log(decoded);
+          if (err) return cb(false, 401, 'Unautorized');
+          info.req.user_id = decoded;
+          cb(true);
+        });
+      }
     });
     this.wsServer.on('connection', (connection, req) => {
       console.log(new Date() + ' connection accepted');
