@@ -52,38 +52,6 @@
              addText('on' + protocol.proto);
            }
          }
-         function WebSocketTest() {
-            if ("WebSocket" in window) {
-               addText("WebSocket is supported by your Browser!");
-               // Let us open a web socket
-               ws = new WebSocket("ws://localhost:9080/ws?token=" +
-                 '<%= token %>'
-               );
-               ws.onopen = function() {
-                 // Web Socket is connected, send data using send()
-                 return;
-               };
-               ws.onmessage = function (evt) { 
-                 var received_msg = evt.data;
-                 let protocol = JSON.parse(evt.data);
-                 try {
-                   let fn = routines['on' + protocol.proto];
-                   fn(protocol);
-                   addText(received_msg);
-                 } catch(err) {
-                   addText(err.message);
-                   addText('on' + protocol.proto);
-                 }
-               };
-               ws.onclose = function() { 
-                 // websocket is closed.
-                 addText("Connection is closed..."); 
-               };
-           } else {
-               // The browser doesn't support WebSocket
-               addText("WebSocket NOT supported by your Browser!");
-            }
-         }
          function send(payload){
            payload.seq = 123;
            let protocol = JSON.stringify({
@@ -147,13 +115,42 @@
              pair_bets: {}
            });
          }
+         function socketConnect() {
+            if ("WebSocket" in window) {
+               addText("WebSocket is supported by your Browser!");
+               // Let us open a web socket
+               ws = new WebSocket("ws://localhost:9080/ws?token=" +
+                 '<%= token %>'
+               );
+               ws.onopen = function() {
+                 // Web Socket is connected, send data using send()
+                 return;
+               };
+               ws.onmessage = function (evt) { 
+                 var received_msg = evt.data;
+                 let protocol = JSON.parse(evt.data);
+                 try {
+                   let fn = routines['on' + protocol.proto];
+                   fn(protocol);
+                   addText(received_msg);
+                 } catch(err) {
+                   addText(err.message);
+                   addText('on' + protocol.proto);
+                 }
+               };
+               ws.onclose = function() { 
+                 // websocket is closed.
+                 addText("Connection is closed..."); 
+               };
+           } else {
+               // The browser doesn't support WebSocket
+               addText("WebSocket NOT supported by your Browser!");
+            }
+         };
       </script>
    </head>
-   
-   <body>
+   <body onload = "javascript:socketConnect();">
       <div id = "sse">
-         <a href = "javascript:WebSocketTest()">Run WebSocket</a>
-         <hr>
          <a href = "javascript:joinTable()">Join Table</a>
          <hr>
          <a href = "javascript:buyIn()">Buy In</a>

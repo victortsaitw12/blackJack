@@ -19,26 +19,27 @@ class WS extends EventEmitter{
   removeConnection(client_id){
     delete this.connections[client_id];
   }
+  verifyClient(info, cb){
+    const query = R.compose(
+      querystring.parse,
+      R.nth(1),
+      R.split('?')
+    )(info.req.url);
+    if (!query.token){
+      return cb(false, 401, 'Unauthorized');
+    }
+    jwt.verify(query.token, 'jwtsecretekey', (err, decoded) => {
+      console.log(decoded);
+      if (err) return cb(false, 401, 'Unautorized');
+      info.req.user_id = decoded;
+      cb(true);
+    });
+  }
   start(server){
     console.log(`webSocket start`);
     this.wsServer = new WebSocketServer({
       server,
-      verifyClient: (info, cb) => {
-        const query = R.compose(
-          querystring.parse,
-          R.nth(1),
-          R.split('?')
-        )(info.req.url);
-        if (!query.token){
-          return cb(false, 401, 'Unauthorized');
-        }
-        jwt.verify(query.token, 'jwtsecretekey', (err, decoded) => {
-          console.log(decoded);
-          if (err) return cb(false, 401, 'Unautorized');
-          info.req.user_id = decoded;
-          cb(true);
-        });
-      }
+      verifyClient: this.verifyClient,
     });
     this.wsServer.on('connection', (connection, req) => {
       console.log(new Date() + ' connection accepted');
