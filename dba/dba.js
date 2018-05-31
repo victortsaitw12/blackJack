@@ -7,13 +7,6 @@ class DBA{
     this.state = null;
   }
   start(){
-    console.log(process.env.PORT);
-    console.log(process.env.DBA_POOL);
-    console.log(process.env.BLJ_QUEUE);
-    console.log(process.env.BLJ_KEY);
-    console.log(process.env.BIND_QUEUE);
-    console.log(process.env.BIND_POOL);
-    console.log(process.env.BIND_KEY);
     SDK.on('stateChange', (state) => {
       if ('ready' == this.state){
         return;
